@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_news"
+            android:title="News" />
+        <item
+            android:id="@+id/nav_friends"
+            android:title="Friends" />
+        <item
+            android:id="@+id/nav_dialogs"
+            android:title="Dialogs" />
+        <item
+            android:id="@+id/nav_photos"
+            android:title="Photos" />
+        <item
+            android:id="@+id/nav_communities"
+            android:title="Communities" />
+        <item
+            android:id="@+id/nav_music"
+            android:title="Music" />
+        <item
+            android:id="@+id/nav_videos"
+            android:title="Videos" />
+    </group>
+
+</menu>

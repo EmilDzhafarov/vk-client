@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="ua.nure.dzhafarov.vkontakte">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <activity android:name=".activities.MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <service android:name=".services.UpdateService"/>
+        
+        <activity
+            android:name=".activities.ActivityListCommunities"
+            android:label="@string/activity_communities"
+            android:theme="@style/AppTheme.NoActionBar"/>
+        <activity
+            android:name=".activities.ActivityChat"
+            android:theme="@style/AppTheme.NoActionBar"/>
+        <activity
+            android:name=".activities.ActivityListDialogs"
+            android:label="@string/activity_dialogs" />
+        <activity
+            android:name=".activities.ActivityListFriends"
+            android:label="@string/activity_friends"
+            android:theme="@style/AppTheme.NoActionBar"/>
+        <activity
+            android:name=".activities.ActivityListMusic"
+            android:label="@string/activity_music" />
+        <activity
+            android:name=".activities.ActivityListNews"
+            android:label="@string/activity_news" 
+            android:theme="@style/AppTheme.NoActionBar"/>
+        <activity android:name=".activities.ActivityUserProfile"
+            android:theme="@style/AppTheme.NoActionBar"/>
+        <activity
+            android:name=".activities.ActivityListPhotos"
+            android:label="@string/activity_photos" />
+        <activity
+            android:name=".activities.ActivityListVideos"
+            android:label="@string/activity_videos" />
+    </application>
+
+</manifest>

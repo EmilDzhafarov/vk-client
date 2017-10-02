@@ -1,0 +1,34 @@
+<resources>
+    <string name="app_name">Vkontakte</string>
+    <string name="activity_friends">Friends</string>
+    <string name="activity_news">News</string>
+    <string name="activity_photos">Photos</string>
+    <string name="activity_videos">Videos</string>
+    <string name="activity_music">Music</string>
+    <string name="activity_dialogs">Dialogs</string>
+    <string name="activity_communities">Communities</string>
+    <string name="title_activity_initial">InitialActivity</string>
+
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
+
+    <string name="action_settings">Settings</string>
+
+    <string name="user_photo">User\'s photo</string>
+    <string name="sex_0">Not specify</string>
+    <string name="sex_1">Woman</string>
+    <string name="sex_2">Man</string>
+    <string name="last_seen">Last seen: %s</string>
+
+    <string name="empty_status">-</string>
+    <string name="empty_country">-</string>
+    <string name="empty_city">-</string>
+    <string name="empty_birthday">-</string>
+
+    <string name="label_sex">Sex</string>
+    <string name="label_birthday">Birthday</string>
+    <string name="label_country">Country</string>
+    <string name="label_city">City</string>
+    <string name="label_status">Status</string>
+    <string name="label_common_count">Common users</string>
+</resources>
