@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/message_layout"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="#EEEEEE"
@@ -8,13 +9,30 @@
     android:paddingEnd="8dp"
     android:paddingStart="8dp"
     android:paddingTop="8dp">
-
-
+    
     <TextView
         android:id="@+id/message_body_text_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:maxWidth="300dp"
         android:background="@drawable/even"
+        android:maxWidth="250dp"
         android:textAppearance="?android:textAppearanceMedium" />
+
+    <TextView
+        android:id="@+id/message_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="5dp" />
+
+    <TextView
+        android:id="@+id/message_date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:padding="4dp"
+        android:layout_margin="8dp"
+        android:background="@drawable/date"
+        android:textStyle="bold"
+        android:visibility="gone"/>
+    
 </LinearLayout>

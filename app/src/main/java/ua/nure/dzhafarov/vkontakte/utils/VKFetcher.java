@@ -86,7 +86,7 @@ class VKFetcher {
         return communities;
     }
 
-    void sendMessageToUser(String message, int userId) {
+    Integer sendMessageToUser(String message, int userId) {
         Uri sendMessageURI = Uri.parse("https://api.vk.com/method/messages.send")
                 .buildUpon()
                 .appendQueryParameter("v", "5.68")
@@ -94,12 +94,18 @@ class VKFetcher {
                 .appendQueryParameter("message", message)
                 .appendQueryParameter("user_id", String.valueOf(userId))
                 .build();
-
+        
+        Integer messageId = 0;
+        
         try {
-            getUrlString(sendMessageURI.toString());
-        } catch (IOException e) {
+            String jsonStr = getUrlString(sendMessageURI.toString());
+            JSONObject jsonObject = new JSONObject(jsonStr);
+            messageId = jsonObject.getInt("response");
+        } catch (IOException | JSONException e) {
             e.printStackTrace();
         }
+        
+        return messageId;
     }
     
     LongPoll getLongPollServer() {
@@ -130,18 +136,24 @@ class VKFetcher {
         return longPoll;
     }
     
-    Long connectToLongPollServer(Long ts, OperationListener<Message> listener) {
+    void connectToLongPollServer(Long ts, OperationListener<List<Message>> listener) {
         LongPoll current = VKManager.getInstance().getCurrentLongPoll();
         
         String connectString = String.format(Locale.US,
                 "https://%s?act=a_check&key=%s&ts=%d&wait=25&mode=2&version=2",
                 current.getServer(), current.getKey(), ts);
         
-        Long newTs = 0L;
+        Long newTs;
+        
         try {
             String jsonString = getUrlString(connectString);
             JSONObject jsonObject = new JSONObject(jsonString);
             JSONArray updates = jsonObject.getJSONArray("updates");
+
+            newTs = jsonObject.getLong("ts");
+            VKManager.getInstance().getCurrentLongPoll().setTs(newTs);
+            
+            List<Message> messages = new ArrayList<>();
             
             for (int i = 0; i < updates.length(); i++) {
                 JSONArray event = updates.getJSONArray(i);
@@ -149,31 +161,34 @@ class VKFetcher {
                 
                 if (eventCode == 4) {
                     Message message = new Message();
-                    message.setId(event.getInt(1));
+                    
+                    message.setMessageId(event.getInt(1));
                     message.setTime(event.getLong(4));
-                    message.setBody(event.getString(5));
+                    message.setText(event.getString(5));
+                    message.setTs(newTs);
                     
-                    int isSending = event.getInt(2);
+                    int mask = event.getInt(2);
+                    int peerId = event.getInt(3);
                     
-                    if (isSending == 35) {
+                    if (mask == 35) {
+                        message.setUserId(peerId);
                         message.setFromId(VKManager.getInstance().getCurrentUser().getId());
-                    } 
-                    
-                    if (isSending == 49) {
-                        message.setFromId(event.getInt(3));
                     }
                     
-                    listener.onSuccess(message);
+                    if (mask == 49) {
+                        message.setFromId(peerId);
+                        message.setUserId(VKManager.getInstance().getCurrentUser().getId());
+                    }
+                    
+                    messages.add(message);
                 }
             }
-            
-            newTs = jsonObject.getLong("ts");
+
+            listener.onSuccess(messages);
             
         } catch (IOException | JSONException e) {
             e.printStackTrace();
         }
-        
-        return newTs;
     } 
     
     boolean removeUser(int id) {
@@ -203,7 +218,7 @@ class VKFetcher {
                 .buildUpon()
                 .appendQueryParameter("access_token", accessToken)
                 .appendQueryParameter("lang", "en")
-                .appendQueryParameter("message_ids", String.valueOf(message.getId()))
+                .appendQueryParameter("message_ids", String.valueOf(message.getMessageId()))
                 .appendQueryParameter("v", "5.68")
                 .build();
 
@@ -227,7 +242,7 @@ class VKFetcher {
         if (curr == null) {
             id = -1;
         } else {
-            id = curr.getId();
+            id = curr.getMessageId();
         }
         
         Uri messagesUri = Uri.parse("https://api.vk.com/method/messages.getHistory")
@@ -236,7 +251,7 @@ class VKFetcher {
                 .appendQueryParameter("lang", "en")
                 .appendQueryParameter("user_id", String.valueOf(user.getId()))
                 .appendQueryParameter("start_message_id", String.valueOf(id))
-                .appendQueryParameter("count", "100")
+                .appendQueryParameter("count", "40")
                 .appendQueryParameter("v", "5.68")
                 .build();
 
@@ -258,7 +273,6 @@ class VKFetcher {
     }
     
     User getCurrentUser() {
-        System.out.println("ACCESS_TOKEN ===> " +accessToken);
         Uri userByIdUri = Uri.parse("https://api.vk.com/method/users.get")
                 .buildUpon()
                 .appendQueryParameter("access_token", accessToken)
@@ -283,12 +297,12 @@ class VKFetcher {
     private Message getMessageFromJSON(JSONObject curr) throws JSONException {
         Message message = new Message();
         
-        message.setId(curr.getInt("id"));
-        message.setBody(curr.getString("body"));
+        message.setMessageId(curr.getInt("id"));
+        message.setText(curr.getString("body"));
         message.setFromId(curr.getInt("from_id"));
         message.setUserId(curr.getInt("user_id"));
         message.setTime(curr.getLong("date"));
-        message.setReaded(curr.getInt("read_state") == 1);
+        message.setReadState(curr.getInt("read_state"));
         
         return message;
     }

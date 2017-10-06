@@ -3,7 +3,9 @@ package ua.nure.dzhafarov.vkontakte.services;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
+import java.util.List;
 
+import ua.nure.dzhafarov.vkontakte.database.MessageLab;
 import ua.nure.dzhafarov.vkontakte.models.Message;
 import ua.nure.dzhafarov.vkontakte.utils.OperationListener;
 import ua.nure.dzhafarov.vkontakte.utils.VKManager;
@@ -13,7 +15,8 @@ public class UpdateService extends Service {
     private VKManager vkManager;
 
     public static final String SEND_MESSAGES_VK = "send_messages_vk";
-    
+    public static final String CURRENT_TS = "current_ts";
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -41,25 +44,34 @@ public class UpdateService extends Service {
                 new Runnable() {
                     @Override
                     public void run() {
-                        while (true) {
-                            Long curr = vkManager.getCurrentLongPoll().getTs();
-                            curr = vkManager.connectToLongPollServer(curr, new OperationListener<Message>() {
-                                @Override
-                                public void onSuccess(Message object) {
-                                    passMessageToActivity(object);
-                                }
-                            });
-                            System.out.println("LONG POLL TS ===> " + curr);
-                        }
+                        startConnectingLongPollService();
                     }
                 }
         ).start();
     }
 
-    private void passMessageToActivity(Message message){
-        Intent intent = new Intent();
-        intent.setAction(SEND_MESSAGES_VK);
-        intent.putExtra(SEND_MESSAGES_VK, message);
-        sendBroadcast(intent);
+    private void startConnectingLongPollService() {
+        final Long currTs = vkManager.getCurrentLongPoll().getTs();
+
+        vkManager.connectToLongPollServer(currTs,
+                new OperationListener<List<Message>>() {
+                    @Override
+                    public void onSuccess(List<Message> messages) {
+                        if (!messages.isEmpty()) {
+                            MessageLab.getInstance(UpdateService.this).addAllMessages(messages);
+                            sendBroadcastToShowMessages(messages);     
+                        }
+                       
+                        startConnectingLongPollService();
+                    }
+                });
+    }
+    
+    private void sendBroadcastToShowMessages(List<Message> messages) {
+        if (!messages.isEmpty()) {
+            Intent intent = new Intent();
+            intent.setAction(SEND_MESSAGES_VK);
+            sendBroadcast(intent);
+        }
     }
 }

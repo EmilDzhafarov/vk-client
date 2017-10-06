@@ -4,36 +4,32 @@ import java.io.Serializable;
 
 public class Message implements Serializable {
     
-    private int id;
-    private String body;
+    private long id = -1;
+    private int messageId;
+    private String text;
     private int userId;
     private int fromId;
     private long time;
-    private boolean readed;
+    private long ts;
+    private int readState;
+    private int sendState;
     
     public Message() {}
 
-    @Override
-    public String toString() {
-        return "Message{" +
-                "body='" + body + '\'' +
-                '}';
-    }
-
-    public int getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(long id) {
         this.id = id;
     }
 
-    public String getBody() {
-        return body;
+    public String getText() {
+        return text;
     }
 
-    public void setBody(String body) {
-        this.body = body;
+    public void setText(String text) {
+        this.text = text;
     }
 
     public int getUserId() {
@@ -60,11 +56,35 @@ public class Message implements Serializable {
         this.time = time;
     }
 
-    public boolean isReaded() {
-        return readed;
+    public int getReadState() {
+        return readState;
     }
 
-    public void setReaded(boolean readed) {
-        this.readed = readed;
+    public void setReadState(int read) {
+        this.readState = read;
+    }
+
+    public long getTs() {
+        return ts;
+    }
+
+    public void setTs(long ts) {
+        this.ts = ts;
+    }
+
+    public int getSendState() {
+        return sendState;
+    }
+
+    public void setSendState(int sendState) {
+        this.sendState = sendState;
+    }
+
+    public int getMessageId() {
+        return messageId;
+    }
+
+    public void setMessageId(int messageId) {
+        this.messageId = messageId;
     }
 }

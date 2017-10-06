@@ -1,7 +1,10 @@
 package ua.nure.dzhafarov.vkontakte.utils;
 
+import android.content.Context;
+
 import java.util.List;
 
+import ua.nure.dzhafarov.vkontakte.database.MessageLab;
 import ua.nure.dzhafarov.vkontakte.models.Community;
 import ua.nure.dzhafarov.vkontakte.models.User;
 import ua.nure.dzhafarov.vkontakte.models.LongPoll;
@@ -16,6 +19,7 @@ public class VKManager {
     private VKFetcher fetcher;
     private LongPoll longPoll;
     private User currentUser;
+    private MessageLab messageLab;
     
     public static synchronized VKManager getInstance() {
         if (instance == null) {
@@ -25,13 +29,15 @@ public class VKManager {
         return instance;
     }
 
-    public synchronized void initialize(String token, OperationListener<LongPoll> listener) {
+    public synchronized void initialize(Context context, String token, OperationListener<LongPoll> listener) {
         if (fetcher == null) {
-            currentUser = new User();
-            longPoll = new LongPoll();
             fetcher = new VKFetcher(token);
-            initLongPoll(listener);
         }
+        
+        currentUser = new User();
+        longPoll = new LongPoll();
+        initLongPoll(listener);
+        messageLab = MessageLab.getInstance(context.getApplicationContext());
     }
     
     public void loadUsers(final OperationListener<List<User>> listener) {
@@ -82,12 +88,16 @@ public class VKManager {
         ).start();
     }
     
-    public void markMessageAsRead(final Message message) {
+    public void markMessageAsRead(final Message message, final OperationListener<Message> listener) {
         new Thread(
                 new Runnable() {
                     @Override
                     public void run() {
-                        fetcher.markMessageAsRead(message);      
+                        Integer resultCode = fetcher.markMessageAsRead(message);
+                        
+                        if (resultCode != -1) {
+                            listener.onSuccess(message);   
+                        }
                     }
                 }
         ).start();
@@ -115,8 +125,16 @@ public class VKManager {
                 new Runnable() {
                     @Override
                     public void run() {
-                        fetcher.sendMessageToUser(message.getBody(), id);
-                        listener.onSuccess(message);
+                        messageLab.addMessage(message);
+                        Integer messageId = fetcher.sendMessageToUser(message.getText(), id);
+                        
+                        if (messageId != 0) {
+                            message.setMessageId(messageId);
+                            message.setSendState(1);
+                            message.setTime(System.currentTimeMillis() / 1000);
+                            
+                            listener.onSuccess(message);
+                        }
                     }
                 }
         ).start();
@@ -137,10 +155,8 @@ public class VKManager {
         ).start();
     }
 
-    public Long connectToLongPollServer(final Long ts, OperationListener<Message> listener) {
-        Long newTs = fetcher.connectToLongPollServer(ts, listener);
-        longPoll.setTs(newTs);
-        return newTs;
+    public void connectToLongPollServer(final Long ts, OperationListener<List<Message>> listener) {
+        fetcher.connectToLongPollServer(ts, listener);
     }
 
     public void loadCurrentUser(final OperationListener<User> listener) {

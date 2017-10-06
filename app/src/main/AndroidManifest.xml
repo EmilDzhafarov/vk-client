@@ -28,27 +28,11 @@
             android:name=".activities.ActivityChat"
             android:theme="@style/AppTheme.NoActionBar"/>
         <activity
-            android:name=".activities.ActivityListDialogs"
-            android:label="@string/activity_dialogs" />
-        <activity
             android:name=".activities.ActivityListFriends"
             android:label="@string/activity_friends"
             android:theme="@style/AppTheme.NoActionBar"/>
-        <activity
-            android:name=".activities.ActivityListMusic"
-            android:label="@string/activity_music" />
-        <activity
-            android:name=".activities.ActivityListNews"
-            android:label="@string/activity_news" 
-            android:theme="@style/AppTheme.NoActionBar"/>
         <activity android:name=".activities.ActivityUserProfile"
             android:theme="@style/AppTheme.NoActionBar"/>
-        <activity
-            android:name=".activities.ActivityListPhotos"
-            android:label="@string/activity_photos" />
-        <activity
-            android:name=".activities.ActivityListVideos"
-            android:label="@string/activity_videos" />
     </application>
 
 </manifest>

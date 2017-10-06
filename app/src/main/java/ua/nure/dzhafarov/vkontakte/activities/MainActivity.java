@@ -109,17 +109,17 @@ public class MainActivity extends AppCompatActivity {
 
     private void startInitialActivity() {
         final VKManager vkManager = VKManager.getInstance();
-        vkManager.initialize(getAccessToken(), new OperationListener<LongPoll>() {
+        vkManager.initialize(this, getAccessToken(), new OperationListener<LongPoll>() {
             @Override
             public void onSuccess(LongPoll longPoll) {
                 Intent serviceIntent = new Intent(MainActivity.this, UpdateService.class);
                 startService(serviceIntent);
+                
+                Intent intent = new Intent(MainActivity.this, ActivityListFriends.class);
+                startActivity(intent);
+                finish();
             }
         });
-
-        Intent intent = new Intent(MainActivity.this, ActivityListFriends.class);
-        startActivity(intent);
-        finish();
     }
 
     private void saveAccessToken(String accessToken) {
