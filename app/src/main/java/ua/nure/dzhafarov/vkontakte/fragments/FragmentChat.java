@@ -128,6 +128,7 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
                             @Override
                             public void onSuccess(final Message me) {
                                 messageLab.updateMessage(me);
+                                
                             }
                         });
             }
@@ -165,6 +166,7 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
         receiver = new MessageReceiver();
         IntentFilter intentFilter = new IntentFilter();
         intentFilter.addAction(UpdateService.SEND_MESSAGES_VK);
+        intentFilter.addAction(UpdateService.USER_READ_MESSAGES);
         getActivity().registerReceiver(receiver, intentFilter);
     }
 
@@ -205,6 +207,38 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
 
                                     recyclerView.scrollToPosition(0);
                                     messageAdapter.notifyDataSetChanged();
+                                }
+                            }
+                    );
+                }
+            }
+            
+            if (intent.getAction().equals(UpdateService.USER_READ_MESSAGES)) {
+                Activity activity = getActivity();
+                
+                if (activity != null) {
+                    activity.runOnUiThread(
+                            new Runnable() {
+                                @Override
+                                public void run() {
+                                    int[] eventData = intent.getIntArrayExtra(UpdateService.EVENT_DATA);
+                                    
+                                    if (eventData != null && destUser.getId() == eventData[1]) {
+                                        int pos = 0;
+                                        for (int i = 0; i < messages.size(); i++) {
+                                            if (messages.get(i).getMessageId() == eventData[2]) {
+                                                pos = i;
+                                                break;
+                                            }
+                                        }
+                                        
+                                        for (int j = pos; j < messages.size(); j++) {
+                                            messages.get(j).setReadState(1);
+                                        }
+                                        
+                                        messages.get(pos).setReadState(1);
+                                        messageAdapter.notifyItemRangeChanged(pos, messages.size() - pos - 1);
+                                    }
                                 }
                             }
                     );

@@ -13,6 +13,7 @@
         <android.support.v7.widget.RecyclerView
             android:id="@+id/chat_messages_recycler_view"
             android:layout_width="match_parent"
+            android:background="@drawable/chat_background"
             android:layout_height="0dp"
             android:layout_weight="9">
 
@@ -26,6 +27,15 @@
             android:padding="8dp"
             android:orientation="horizontal">
 
+            <ImageButton
+                android:id="@+id/attach_file_button"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:src="@drawable/attach_file" />
+            
             <EditText
                 android:id="@+id/send_body_message"
                 android:layout_width="0dp"
@@ -43,7 +53,7 @@
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
                 android:background="?attr/selectableItemBackgroundBorderless"
-                android:src="@drawable/send_message_arrow" />
+                android:src="@drawable/send" />
         </LinearLayout>
     </LinearLayout>
     

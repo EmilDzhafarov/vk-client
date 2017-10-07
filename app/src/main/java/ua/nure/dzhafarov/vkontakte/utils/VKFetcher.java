@@ -136,7 +136,7 @@ class VKFetcher {
         return longPoll;
     }
     
-    void connectToLongPollServer(Long ts, OperationListener<List<Message>> listener) {
+    void connectToFromLongPollServer(Long ts, OperationListener<List<Message>> messageListener, OperationListener<int[]> eventListener) {
         LongPoll current = VKManager.getInstance().getCurrentLongPoll();
         
         String connectString = String.format(Locale.US,
@@ -158,6 +158,10 @@ class VKFetcher {
             for (int i = 0; i < updates.length(); i++) {
                 JSONArray event = updates.getJSONArray(i);
                 int eventCode = event.getInt(0);
+                
+                if (eventCode == 7) {
+                    eventListener.onSuccess(new int[] {event.getInt(0), event.getInt(1), event.getInt(2)});
+                }
                 
                 if (eventCode == 4) {
                     Message message = new Message();
@@ -184,7 +188,7 @@ class VKFetcher {
                 }
             }
 
-            listener.onSuccess(messages);
+            messageListener.onSuccess(messages);
             
         } catch (IOException | JSONException e) {
             e.printStackTrace();

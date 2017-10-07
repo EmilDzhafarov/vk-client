@@ -15,8 +15,10 @@ public class UpdateService extends Service {
     private VKManager vkManager;
 
     public static final String SEND_MESSAGES_VK = "send_messages_vk";
-    public static final String CURRENT_TS = "current_ts";
+    public static final String USER_READ_MESSAGES = "user_read_messages";
 
+    public static final String EVENT_DATA = "event_data";
+    
     @Override
     public void onCreate() {
         super.onCreate();
@@ -59,12 +61,27 @@ public class UpdateService extends Service {
                     public void onSuccess(List<Message> messages) {
                         if (!messages.isEmpty()) {
                             MessageLab.getInstance(UpdateService.this).addAllMessages(messages);
-                            sendBroadcastToShowMessages(messages);     
+                            sendBroadcastToShowMessages(messages);
                         }
-                       
+
                         startConnectingLongPollService();
                     }
+                },
+                new OperationListener<int[]>() {
+                    @Override
+                    public void onSuccess(int[] object) {
+                        if (object.length == 3) {
+                            sendBroadcastToShowEvents(object);
+                        }
+                    }
                 });
+    }
+    
+    private void sendBroadcastToShowEvents(int[] obj) {
+        Intent intent = new Intent();
+        intent.putExtra(EVENT_DATA, obj);
+        intent.setAction(USER_READ_MESSAGES);
+        sendBroadcast(intent);
     }
     
     private void sendBroadcastToShowMessages(List<Message> messages) {

@@ -155,10 +155,10 @@ public class VKManager {
         ).start();
     }
 
-    public void connectToLongPollServer(final Long ts, OperationListener<List<Message>> listener) {
-        fetcher.connectToLongPollServer(ts, listener);
+    public void connectToLongPollServer(final Long ts, OperationListener<List<Message>> listener, OperationListener<int[]> eventListener) {
+        fetcher.connectToFromLongPollServer(ts, listener, eventListener);
     }
-
+    
     public void loadCurrentUser(final OperationListener<User> listener) {
         new Thread(
                 new Runnable() {
