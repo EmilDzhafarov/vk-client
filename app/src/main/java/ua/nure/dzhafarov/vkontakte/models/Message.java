@@ -12,7 +12,7 @@ public class Message implements Serializable {
     private long time;
     private long ts;
     private int readState;
-    private int sendState;
+    private int sendState = -1;
     
     public Message() {}
 
@@ -86,5 +86,21 @@ public class Message implements Serializable {
 
     public void setMessageId(int messageId) {
         this.messageId = messageId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Message message = (Message) o;
+
+        return messageId == message.messageId;
+
+    }
+
+    @Override
+    public int hashCode() {
+        return messageId;
     }
 }

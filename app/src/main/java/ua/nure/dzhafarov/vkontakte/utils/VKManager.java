@@ -2,6 +2,8 @@ package ua.nure.dzhafarov.vkontakte.utils;
 
 import android.content.Context;
 
+import org.json.JSONArray;
+
 import java.util.List;
 
 import ua.nure.dzhafarov.vkontakte.database.MessageLab;
@@ -155,8 +157,8 @@ public class VKManager {
         ).start();
     }
 
-    public void connectToLongPollServer(final Long ts, OperationListener<List<Message>> listener, OperationListener<int[]> eventListener) {
-        fetcher.connectToFromLongPollServer(ts, listener, eventListener);
+    public void connectToLongPollServer(final Long ts, OperationListener<JSONArray> eventListener) {
+        fetcher.connectToLongPollServer(ts, eventListener);
     }
     
     public void loadCurrentUser(final OperationListener<User> listener) {

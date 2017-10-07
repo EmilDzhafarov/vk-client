@@ -26,6 +26,7 @@
             android:theme="@style/AppTheme.NoActionBar"/>
         <activity
             android:name=".activities.ActivityChat"
+            android:windowSoftInputMode="adjustResize"
             android:theme="@style/AppTheme.NoActionBar"/>
         <activity
             android:name=".activities.ActivityListFriends"

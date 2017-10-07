@@ -3,7 +3,9 @@ package ua.nure.dzhafarov.vkontakte.services;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
-import java.util.List;
+
+import org.json.JSONArray;
+import org.json.JSONException;
 
 import ua.nure.dzhafarov.vkontakte.database.MessageLab;
 import ua.nure.dzhafarov.vkontakte.models.Message;
@@ -14,11 +16,13 @@ public class UpdateService extends Service {
 
     private VKManager vkManager;
 
-    public static final String SEND_MESSAGES_VK = "send_messages_vk";
-    public static final String USER_READ_MESSAGES = "user_read_messages";
+    public static final String ACTION_SEND_MESSAGE_VK = "action_send_message_vk";
+    public static final String ACTION_USER_READ_MESSAGE = "action_user_read_message";
+    public static final String ACTION_USER_TYPES_MESSAGE = "action_user_types_message";
 
-    public static final String EVENT_DATA = "event_data";
-    
+    public static final String CURRENT_USER_ID = "current_user_id";
+    public static final String MESSAGE_LOCAL_ID = "message_local_id";
+
     @Override
     public void onCreate() {
         super.onCreate();
@@ -55,40 +59,78 @@ public class UpdateService extends Service {
     private void startConnectingLongPollService() {
         final Long currTs = vkManager.getCurrentLongPoll().getTs();
 
-        vkManager.connectToLongPollServer(currTs,
-                new OperationListener<List<Message>>() {
-                    @Override
-                    public void onSuccess(List<Message> messages) {
-                        if (!messages.isEmpty()) {
-                            MessageLab.getInstance(UpdateService.this).addAllMessages(messages);
-                            sendBroadcastToShowMessages(messages);
-                        }
+        vkManager.connectToLongPollServer(currTs, new OperationListener<JSONArray>() {
+            @Override
+            public void onSuccess(JSONArray object) {
+                try {
 
-                        startConnectingLongPollService();
-                    }
-                },
-                new OperationListener<int[]>() {
-                    @Override
-                    public void onSuccess(int[] object) {
-                        if (object.length == 3) {
-                            sendBroadcastToShowEvents(object);
+                    for (int i = 0; i < object.length(); i++) {
+                        JSONArray event = object.getJSONArray(i);
+                        int eventCode = event.getInt(0);
+                        
+                        if (eventCode == 4) {
+                            sendBroadcastToShowNewMessage(event);
+                        } else if (eventCode == 7) {
+                            sendBroadcastToShowReadingEvent(event);
+                        } else if (eventCode == 61) {
+                            sendBroadcastToShowUserTypes(event);
                         }
                     }
-                });
+
+                    startConnectingLongPollService();
+
+                } catch (JSONException ex) {
+                    ex.printStackTrace();
+                }
+            }
+        });
     }
-    
-    private void sendBroadcastToShowEvents(int[] obj) {
+
+    private void sendBroadcastToShowUserTypes(JSONArray data) throws JSONException {
+        int userId = data.getInt(1);
+        
         Intent intent = new Intent();
-        intent.putExtra(EVENT_DATA, obj);
-        intent.setAction(USER_READ_MESSAGES);
+        intent.putExtra(CURRENT_USER_ID, userId);
+        intent.setAction(ACTION_USER_TYPES_MESSAGE);
         sendBroadcast(intent);
     }
     
-    private void sendBroadcastToShowMessages(List<Message> messages) {
-        if (!messages.isEmpty()) {
-            Intent intent = new Intent();
-            intent.setAction(SEND_MESSAGES_VK);
-            sendBroadcast(intent);
+    private void sendBroadcastToShowReadingEvent(JSONArray data) throws JSONException {
+        int userId = data.getInt(1);
+        int localId = data.getInt(2);
+
+        Intent intent = new Intent();
+        intent.putExtra(CURRENT_USER_ID, userId);
+        intent.putExtra(MESSAGE_LOCAL_ID, localId);
+        intent.setAction(ACTION_USER_READ_MESSAGE);
+        sendBroadcast(intent);
+    }
+
+    private void sendBroadcastToShowNewMessage(JSONArray event) throws JSONException {
+        Message message = new Message();
+
+        message.setMessageId(event.getInt(1));
+        message.setTime(event.getLong(4));
+        message.setText(event.getString(5));
+        message.setTs(vkManager.getCurrentLongPoll().getTs());
+
+        int mask = event.getInt(2);
+        int peerId = event.getInt(3);
+
+        if (mask == 35) {
+            message.setUserId(peerId);
+            message.setFromId(VKManager.getInstance().getCurrentUser().getId());
         }
+
+        if (mask == 49) {
+            message.setFromId(peerId);
+            message.setUserId(VKManager.getInstance().getCurrentUser().getId());
+        }
+
+        MessageLab.getInstance(this).addMessage(message);
+
+        Intent intent = new Intent();
+        intent.setAction(ACTION_SEND_MESSAGE_VK);
+        sendBroadcast(intent);
     }
 }

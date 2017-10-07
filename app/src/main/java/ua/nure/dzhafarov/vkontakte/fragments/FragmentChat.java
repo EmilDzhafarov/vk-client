@@ -10,11 +10,17 @@ import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +44,7 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
     private RecyclerView recyclerView;
     private EditText messageTypeField;
     private ImageButton sendMessageButton;
+    private TextView userTypesMessageTextView;
     private List<Message> messages;
     private MessageAdapter messageAdapter;
     private VKManager vkManager;
@@ -64,8 +71,10 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
 
         recyclerView = (RecyclerView) view.findViewById(R.id.chat_messages_recycler_view);
         messageTypeField = (EditText) view.findViewById(R.id.send_body_message);
+        
         sendMessageButton = (ImageButton) view.findViewById(R.id.send_button_message);
         sendMessageButton.setOnClickListener(this);
+        userTypesMessageTextView = (TextView) view.findViewById(R.id.user_types_text_view);
         messages = new ArrayList<>();
         messageAdapter = new MessageAdapter(messages, getActivity());
         recyclerView.setAdapter(messageAdapter);
@@ -76,7 +85,11 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
         recyclerView.setLayoutManager(manager);
 
         destUser = (User) getActivity().getIntent().getSerializableExtra(REQUEST_USER_PROFILE);
-        getActivity().setTitle(destUser.getFirstName() + " " + destUser.getLastName());
+        
+        if (destUser != null) {
+            getActivity().setTitle(destUser.getFirstName() + " " + destUser.getLastName());
+            userTypesMessageTextView.setText(destUser.getFirstName() + " is typing a message...");   
+        }
 
         vkManager = VKManager.getInstance();
         messageLab = MessageLab.getInstance(getActivity());
@@ -127,8 +140,17 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
                 vkManager.sendMessage(message, message.getUserId(), new OperationListener<Message>() {
                             @Override
                             public void onSuccess(final Message me) {
-                                messageLab.updateMessage(me);
-                                
+                                getActivity().runOnUiThread(
+                                        new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                messageLab.updateMessage(me);
+                                                int pos = messages.indexOf(me);
+                                                messages.set(pos, me);
+                                                messageAdapter.notifyItemChanged(pos);              
+                                            }
+                                        }
+                                );
                             }
                         });
             }
@@ -143,7 +165,7 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
 
     private void showNewMessageInUI(Message message) {
         messages.add(0, message);
-        messageAdapter.notifyDataSetChanged();
+        messageAdapter.notifyItemInserted(0);
         recyclerView.scrollToPosition(0);
         messageTypeField.setText("");
     }
@@ -165,23 +187,54 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
     public void registerReceiver() {
         receiver = new MessageReceiver();
         IntentFilter intentFilter = new IntentFilter();
-        intentFilter.addAction(UpdateService.SEND_MESSAGES_VK);
-        intentFilter.addAction(UpdateService.USER_READ_MESSAGES);
+        intentFilter.addAction(UpdateService.ACTION_SEND_MESSAGE_VK);
+        intentFilter.addAction(UpdateService.ACTION_USER_READ_MESSAGE);
+        intentFilter.addAction(UpdateService.ACTION_USER_TYPES_MESSAGE);
         getActivity().registerReceiver(receiver, intentFilter);
     }
-
+    
     private class MessageReceiver extends BroadcastReceiver {
 
         public MessageReceiver() {
             super();
+            animation.setAnimationListener(new Animation.AnimationListener() {
+                @Override
+                public void onAnimationStart(Animation animation) {
+                    userTypesMessageTextView.setVisibility(View.VISIBLE);
+                    recyclerView.scrollToPosition(0);
+                }
+
+                @Override
+                public void onAnimationEnd(Animation animation) {
+                    userTypesMessageTextView.setVisibility(View.GONE);
+                }
+
+                @Override
+                public void onAnimationRepeat(Animation animation) {
+
+                }
+            });
+
+            animation.setDuration(5000);
+            animation.setStartOffset(5);
         }
 
+        private Animation animation = new AlphaAnimation(0.0f, 1.0f);
+        
+        private OperationListener<Message> listener = new OperationListener<Message>() {
+            @Override
+            public void onSuccess(Message object) {
+                object.setReadState(1);
+                messageLab.updateMessage(object);
+            }
+        };
+        
         @Override
         public void onReceive(Context context, final Intent intent) {
-            if (intent.getAction().equals(UpdateService.SEND_MESSAGES_VK)) {
-
-                Activity activity = getActivity();
-
+            Activity activity = getActivity();
+            
+            if (intent.getAction().equals(UpdateService.ACTION_SEND_MESSAGE_VK)) {
+                
                 if (activity != null) {
                     activity.runOnUiThread(
                             new Runnable() {
@@ -192,14 +245,6 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
                                     );
 
                                     messages.addAll(0, mess);
-
-                                    OperationListener<Message> listener = new OperationListener<Message>() {
-                                        @Override
-                                        public void onSuccess(Message object) {
-                                            object.setReadState(1);
-                                            messageLab.updateMessage(object);
-                                        }
-                                    };
                                     
                                     for (Message m : mess) {
                                         vkManager.markMessageAsRead(m, listener);
@@ -213,20 +258,20 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
                 }
             }
             
-            if (intent.getAction().equals(UpdateService.USER_READ_MESSAGES)) {
-                Activity activity = getActivity();
-                
+            if (intent.getAction().equals(UpdateService.ACTION_USER_READ_MESSAGE)) {
+               
                 if (activity != null) {
                     activity.runOnUiThread(
                             new Runnable() {
                                 @Override
                                 public void run() {
-                                    int[] eventData = intent.getIntArrayExtra(UpdateService.EVENT_DATA);
+                                    int userId = intent.getIntExtra(UpdateService.CURRENT_USER_ID, -1);
+                                    int localMessageId = intent.getIntExtra(UpdateService.MESSAGE_LOCAL_ID, -1);
                                     
-                                    if (eventData != null && destUser.getId() == eventData[1]) {
+                                    if (userId != -1 && localMessageId != -1) {
                                         int pos = 0;
                                         for (int i = 0; i < messages.size(); i++) {
-                                            if (messages.get(i).getMessageId() == eventData[2]) {
+                                            if (messages.get(i).getMessageId() == localMessageId) {
                                                 pos = i;
                                                 break;
                                             }
@@ -236,13 +281,29 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
                                             messages.get(j).setReadState(1);
                                         }
                                         
-                                        messages.get(pos).setReadState(1);
                                         messageAdapter.notifyItemRangeChanged(pos, messages.size() - pos - 1);
                                     }
                                 }
                             }
                     );
                 }
+            }
+            
+            if (intent.getAction().equals(UpdateService.ACTION_USER_TYPES_MESSAGE)) {
+               if (activity != null) {
+                   activity.runOnUiThread(
+                           new Runnable() {
+                               @Override
+                               public void run() {
+                                   int userId = intent.getIntExtra(UpdateService.CURRENT_USER_ID, -1);
+                                   
+                                   if (userId != -1) {
+                                       userTypesMessageTextView.startAnimation(animation);
+                                   }
+                               }
+                           }
+                   );
+               }
             }
         }
     }
