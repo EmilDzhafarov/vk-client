@@ -29,10 +29,8 @@ public class MessageLab {
         database = new MessageBaseHelper(context).getWritableDatabase();
     }
     
-    public List<Message> getMessagesByFromId(Integer fromId, Long ts) {
+    private List<Message> getMessagesFromCursor(MessageCursorWrapper cursor) {
         List<Message> messages = new ArrayList<>();
-
-        MessageCursorWrapper cursor = queryMessages(fromId, ts);
 
         try {
             cursor.moveToFirst();
@@ -45,6 +43,27 @@ public class MessageLab {
         }
         
         return messages;
+    }
+    
+    public List<Message> getAllUnreadMessagesWithUser(Integer peerId) {
+        MessageCursorWrapper cursor = queryMessages(
+                "SELECT * FROM messages WHERE from_id = " + peerId + " AND read_state = 0");
+        
+        return getMessagesFromCursor(cursor);
+    }
+    
+    public List<Message> getAllUnsentMessagesToUser(Integer fromId) {
+        MessageCursorWrapper cursor = queryMessages(
+                "SELECT * FROM messages WHERE from_id = " + fromId + " AND send_state = 0");
+        
+        return getMessagesFromCursor(cursor);
+    }
+    
+    public List<Message> getMessagesByFromId(Integer fromId, Long ts) {
+        MessageCursorWrapper cursor = queryMessages(
+                "SELECT * FROM messages WHERE from_id = " + fromId + " AND ts >= " + ts);
+        
+        return getMessagesFromCursor(cursor);
     }
 
     private static ContentValues getContentValues(Message message) {
@@ -78,17 +97,12 @@ public class MessageLab {
         return values;
     }
     
-    private MessageCursorWrapper queryMessages(Integer fromId, Long ts) {
-        Cursor cursor = database.rawQuery("SELECT * FROM messages WHERE from_id = " + fromId + " AND ts >= " + ts, null);
+    private MessageCursorWrapper queryMessages(String query) {
+        Cursor cursor = database.rawQuery(query, null);
 
         return new MessageCursorWrapper(cursor);
     }
     
-    public void addAllMessages(List<Message> messages) {
-        for (Message message : messages) {
-            addMessage(message);
-        }
-    }
     
     public void addMessage(Message message) {
         if (message.getId() < 0) {

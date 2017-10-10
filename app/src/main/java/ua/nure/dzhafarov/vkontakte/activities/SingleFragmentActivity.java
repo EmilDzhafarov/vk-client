@@ -14,6 +14,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
+import android.widget.Toast;
+
 import com.squareup.picasso.Picasso;
 import de.hdodenhof.circleimageview.CircleImageView;
 import ua.nure.dzhafarov.vkontakte.R;
@@ -57,6 +59,11 @@ public abstract class SingleFragmentActivity extends AppCompatActivity
                 @Override
                 public void onSuccess(User object) {
                     loadCurrentUserInUI(object);
+                }
+
+                @Override
+                public void onFailure(String message) {
+                    Toast.makeText(SingleFragmentActivity.this, message, Toast.LENGTH_SHORT).show();
                 }
             });    
         }

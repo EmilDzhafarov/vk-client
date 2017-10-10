@@ -6,6 +6,7 @@
     <color name="negative_color">#E53935</color>
     <color name="send_messages">#A5D6A7</color>
     <color name="get_messages">#FFFFFF</color>
-    <color name="text_color_get">#616161</color>
+    <color name="text_color_get">#607D8B</color>
     <color name="text_color_send">#1B5E20</color>
+    <color name="new_message">#E0F7FA</color>
 </resources>

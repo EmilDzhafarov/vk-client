@@ -4,8 +4,10 @@ import android.content.Context;
 
 import org.json.JSONArray;
 
+import java.io.IOException;
 import java.util.List;
 
+import ua.nure.dzhafarov.vkontakte.R;
 import ua.nure.dzhafarov.vkontakte.database.MessageLab;
 import ua.nure.dzhafarov.vkontakte.models.Community;
 import ua.nure.dzhafarov.vkontakte.models.User;
@@ -22,7 +24,8 @@ public class VKManager {
     private LongPoll longPoll;
     private User currentUser;
     private MessageLab messageLab;
-    
+    private Context context;
+
     public static synchronized VKManager getInstance() {
         if (instance == null) {
             instance = new VKManager();
@@ -35,32 +38,41 @@ public class VKManager {
         if (fetcher == null) {
             fetcher = new VKFetcher(token);
         }
-        
+
+        this.context = context.getApplicationContext(); 
         currentUser = new User();
         longPoll = new LongPoll();
         initLongPoll(listener);
-        messageLab = MessageLab.getInstance(context.getApplicationContext());
+        messageLab = MessageLab.getInstance(this.context);
     }
-    
-    public void loadUsers(final OperationListener<List<User>> listener) {
+
+    public void loadFriends(final OperationListener<List<User>> listener) {
         new Thread(
                 new Runnable() {
                     @Override
                     public void run() {
-                        List<User> users = fetcher.getAllUsers();
-                        listener.onSuccess(users);
+                        try {
+                            List<User> friends = fetcher.getAllFriends();
+                            listener.onSuccess(friends);   
+                        } catch (IOException iex) {
+                            listener.onFailure(context.getString(R.string.error_connect_server));
+                        }
                     }
                 }
         ).start();
     }
-    
+
     public void loadCommunities(final OperationListener<List<Community>> listener) {
         new Thread(
                 new Runnable() {
                     @Override
                     public void run() {
-                        List<Community> communities = fetcher.getAllCommunities();
-                        listener.onSuccess(communities);
+                        try {
+                            List<Community> communities = fetcher.getAllCommunities();
+                            listener.onSuccess(communities);   
+                        } catch (IOException iex) {
+                            listener.onFailure(context.getString(R.string.error_connect_server));
+                        }
                     }
                 }
         ).start();
@@ -71,8 +83,12 @@ public class VKManager {
                 new Runnable() {
                     @Override
                     public void run() {
-                        List<Message> messages = fetcher.getChatWith(user, curr);
-                        listener.onChatLoaded(messages, curr);
+                        try {
+                            List<Message> messages = fetcher.getChatWith(user, curr);
+                            listener.onChatLoaded(messages, curr);   
+                        } catch (IOException iex) {
+                            listener.onFailure(context.getString(R.string.error_connect_server));
+                        }
                     }
                 }
         ).start();
@@ -83,40 +99,31 @@ public class VKManager {
                 new Runnable() {
                     @Override
                     public void run() {
-                        fetcher.sendMessageToUser(message, id);
-                        listener.onSuccess(null);
-                    }
-                }
-        ).start();
-    }
-    
-    public void markMessageAsRead(final Message message, final OperationListener<Message> listener) {
-        new Thread(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        Integer resultCode = fetcher.markMessageAsRead(message);
-                        
-                        if (resultCode != -1) {
-                            listener.onSuccess(message);   
+                        try {
+                            fetcher.sendMessageToUser(message, id);
+                            listener.onSuccess(null);    
+                        } catch (IOException iex) {
+                            listener.onFailure(context.getString(R.string.error_connect_server));
                         }
                     }
                 }
         ).start();
     }
-    
-    private void initLongPoll(final OperationListener<LongPoll> listener) {
+
+    public void markMessageAsRead(final Message message, final OperationListener<Message> listener) {
         new Thread(
                 new Runnable() {
                     @Override
                     public void run() {
-                        LongPoll curr = fetcher.getLongPollServer();
+                        try {
+                            Integer resultCode = fetcher.markMessageAsRead(message);
 
-                        longPoll.setKey(curr.getKey());
-                        longPoll.setServer(curr.getServer());
-                        longPoll.setTs(curr.getTs());
-
-                        listener.onSuccess(curr);
+                            if (resultCode != -1) {
+                                listener.onSuccess(message);
+                            }
+                        } catch (IOException iex) {
+                            listener.onFailure(context.getString(R.string.error_connect_server));
+                        }
                     }
                 }
         ).start();
@@ -127,15 +134,21 @@ public class VKManager {
                 new Runnable() {
                     @Override
                     public void run() {
-                        messageLab.addMessage(message);
-                        Integer messageId = fetcher.sendMessageToUser(message.getText(), id);
-                        
-                        if (messageId != 0) {
-                            message.setMessageId(messageId);
-                            message.setSendState(1);
-                            message.setTime(System.currentTimeMillis() / 1000);
-                            
-                            listener.onSuccess(message);
+                        try {
+                            messageLab.addMessage(message);
+                            Integer messageId = fetcher.sendMessageToUser(message.getText(), id);
+
+                            if (messageId != 0) {
+                                message.setMessageId(messageId);
+                                message.setSendState(1);
+                                message.setTime(System.currentTimeMillis());
+
+                                listener.onSuccess(message);
+                            } else {
+                                listener.onFailure(context.getString(R.string.error_send_message));
+                            }
+                        } catch (IOException iex) {
+                            listener.onFailure(context.getString(R.string.error_connect_server));
                         }
                     }
                 }
@@ -147,10 +160,17 @@ public class VKManager {
                 new Runnable() {
                     @Override
                     public void run() {
-                        boolean isRemoved = fetcher.removeUser(user.getId());
+                        try {
+                            boolean isRemoved = fetcher.removeUser(user.getId());
 
-                        if (isRemoved) {
-                            listener.onSuccess(user);
+                            if (isRemoved) {
+                                listener.onSuccess(user);
+                            } else {
+                                listener.onFailure(context.getString(R.string.error_remove_user));
+                            }
+                            
+                        } catch (IOException iex) {
+                            listener.onFailure(context.getString(R.string.error_connect_server));
                         }
                     }
                 }
@@ -158,24 +178,36 @@ public class VKManager {
     }
 
     public void connectToLongPollServer(final Long ts, OperationListener<JSONArray> eventListener) {
-        fetcher.connectToLongPollServer(ts, eventListener);
+        try {
+            fetcher.connectToLongPollServer(ts, eventListener);   
+        } catch (IOException iex) {
+            eventListener.onFailure(context.getString(R.string.error_connect_server));
+        }
     }
-    
+
     public void loadCurrentUser(final OperationListener<User> listener) {
         new Thread(
                 new Runnable() {
                     @Override
                     public void run() {
-                        User temp = fetcher.getCurrentUser();
+                        try {
+                            User temp = fetcher.getInfoAboutCurrentUser();
 
-                        currentUser.setId(temp.getId());
-                        currentUser.setFirstName(temp.getFirstName());
-                        currentUser.setLastName(temp.getLastName());
-                        currentUser.setLastSeen(temp.getLastSeen());
-                        currentUser.setOnline(temp.isOnline());
-                        currentUser.setPhotoURL(temp.getPhotoURL());
-                        
-                        listener.onSuccess(temp);
+                            if (temp != null) {
+                                currentUser.setId(temp.getId());
+                                currentUser.setFirstName(temp.getFirstName());
+                                currentUser.setLastName(temp.getLastName());
+                                currentUser.setLastSeen(temp.getLastSeen());
+                                currentUser.setOnline(temp.isOnline());
+                                currentUser.setPhotoURL(temp.getPhotoURL());
+
+                                listener.onSuccess(temp);
+                            } else {
+                                listener.onFailure(context.getString(R.string.error_load_current_user));
+                            }
+                        } catch (IOException iex) {
+                            listener.onFailure(context.getString(R.string.error_connect_server));
+                        }
                     }
                 }
         ).start();
@@ -195,5 +227,27 @@ public class VKManager {
         }
 
         return longPoll;
+    }
+
+    private void initLongPoll(final OperationListener<LongPoll> listener) {
+        new Thread(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            LongPoll curr = fetcher.getLongPollServer();
+
+                            longPoll.setKey(curr.getKey());
+                            longPoll.setServer(curr.getServer());
+                            longPoll.setTs(curr.getTs());
+
+                            listener.onSuccess(curr);
+
+                        } catch (IOException iex) {
+                            listener.onFailure(context.getString(R.string.error_connect_server));
+                        }
+                    }
+                }
+        ).start();
     }
 }

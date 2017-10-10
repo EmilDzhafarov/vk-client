@@ -65,7 +65,7 @@ public class FragmentUserProfile extends Fragment implements View.OnClickListene
             User user = params[0];
 
             try {
-                Thread.sleep(2000);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -77,18 +77,18 @@ public class FragmentUserProfile extends Fragment implements View.OnClickListene
         @Override
         protected void onPostExecute(User user) {
 
-            fullName.setText(String.format(Locale.US, "%s %s", user.getFirstName(), user.getLastName()));
+            fullName.setText(getString(R.string.user_chat_title, user.getFirstName(), user.getLastName()));
 
             if (user.isOnline()) {
-                lastSeen.setText("Online");
+                lastSeen.setText(getString(R.string.online));
             } else {
-                SimpleDateFormat sdf = new SimpleDateFormat("dd MMM HH:mm", Locale.ROOT);
+                SimpleDateFormat sdf = new SimpleDateFormat(
+                        getString(R.string.date_time_form_user_last_seen),
+                        Locale.ROOT
+                );
 
                 if (user.getLastSeen() != 0) {
-                    lastSeen.setText(
-                            FragmentUserProfile.this.getActivity().getString(
-                                    R.string.last_seen, 
-                                    sdf.format(user.getLastSeen() * 1000))
+                    lastSeen.setText(getString(R.string.last_seen, sdf.format(user.getLastSeen()))
                     );
                 } else {
                     lastSeen.setText("");

@@ -28,8 +28,8 @@ class VKFetcher {
         this.accessToken = accessToken;
     }
 
-    List<User> getAllUsers() {
-        List<User> users = new ArrayList<>();
+    List<User> getAllFriends() throws IOException {
+        List<User> friends = new ArrayList<>();
 
         Uri friendsURI = Uri.parse("https://api.vk.com/method/friends.get")
                 .buildUpon()
@@ -47,17 +47,17 @@ class VKFetcher {
 
             for (int i = 0; i < jsonArray.length(); i++) {
                 User user = getUserFromJSON(jsonArray.getJSONObject(i));
-                users.add(user);
+                friends.add(user);
             }
-            System.out.println("USER LIST ==> " + users);
-        } catch (Exception e) {
+            
+        } catch (JSONException e) {
             e.printStackTrace();
         }
 
-        return users;
+        return friends;
     }
 
-    List<Community> getAllCommunities() {
+    List<Community> getAllCommunities() throws IOException {
         List<Community> communities = new ArrayList<>();
 
         Uri communitiesURI = Uri.parse("https://api.vk.com/method/groups.get")
@@ -79,14 +79,14 @@ class VKFetcher {
                 communities.add(community);
             }
 
-        } catch (Exception e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
 
         return communities;
     }
 
-    Integer sendMessageToUser(String message, int userId) {
+    Integer sendMessageToUser(String message, int userId) throws IOException {
         Uri sendMessageURI = Uri.parse("https://api.vk.com/method/messages.send")
                 .buildUpon()
                 .appendQueryParameter("v", "5.68")
@@ -101,14 +101,14 @@ class VKFetcher {
             String jsonStr = getUrlString(sendMessageURI.toString());
             JSONObject jsonObject = new JSONObject(jsonStr);
             messageId = jsonObject.getInt("response");
-        } catch (IOException | JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
 
         return messageId;
     }
 
-    LongPoll getLongPollServer() {
+    LongPoll getLongPollServer() throws IOException {
         Uri longPollUri = Uri.parse("https://api.vk.com/method/messages.getLongPollServer")
                 .buildUpon()
                 .appendQueryParameter("v", "5.68")
@@ -119,7 +119,7 @@ class VKFetcher {
 
 
         LongPoll longPoll = new LongPoll();
-
+        
         try {
             String jsonString = getUrlString(longPollUri.toString());
             JSONObject jsonObject = new JSONObject(jsonString);
@@ -127,16 +127,15 @@ class VKFetcher {
 
             longPoll.setKey(obj.getString("key"));
             longPoll.setServer(obj.getString("server"));
-            longPoll.setTs(obj.getLong("ts"));
-
-        } catch (IOException | JSONException e) {
-            e.printStackTrace();
+            longPoll.setTs(obj.getLong("ts"));   
+        } catch (JSONException ex) {
+            ex.printStackTrace();
         }
-
+        
         return longPoll;
     }
 
-    void connectToLongPollServer(Long ts, OperationListener<JSONArray> eventListener) {
+    void connectToLongPollServer(Long ts, OperationListener<JSONArray> eventListener) throws IOException {
         LongPoll current = VKManager.getInstance().getCurrentLongPoll();
 
         String connectString = String.format(Locale.US,
@@ -144,7 +143,7 @@ class VKFetcher {
                 current.getServer(), current.getKey(), ts);
 
         Long newTs;
-
+        
         try {
             String jsonString = getUrlString(connectString);
             JSONObject jsonObject = new JSONObject(jsonString);
@@ -155,12 +154,12 @@ class VKFetcher {
 
             eventListener.onSuccess(updates);
 
-        } catch (IOException | JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
     }
 
-    boolean removeUser(int id) {
+    boolean removeUser(int id) throws IOException {
         Uri userByIdUri = Uri.parse("https://api.vk.com/method/friends.delete")
                 .buildUpon()
                 .appendQueryParameter("user_id", String.valueOf(id))
@@ -175,14 +174,14 @@ class VKFetcher {
 
             return success == 1;
 
-        } catch (IOException | JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
 
         return false;
     }
 
-    int markMessageAsRead(Message message) {
+    int markMessageAsRead(Message message) throws IOException {
         Uri markUri = Uri.parse("https://api.vk.com/method/messages.markAsRead")
                 .buildUpon()
                 .appendQueryParameter("access_token", accessToken)
@@ -197,14 +196,14 @@ class VKFetcher {
             String jsonString = getUrlString(markUri.toString());
             resultCode = new JSONObject(jsonString).getInt("response");
 
-        } catch (Exception e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
 
         return resultCode;
     }
 
-    List<Message> getChatWith(User user, Message curr) {
+    List<Message> getChatWith(User user, Message curr) throws IOException {
         List<Message> messages = new ArrayList<>();
 
         int id;
@@ -220,7 +219,7 @@ class VKFetcher {
                 .appendQueryParameter("lang", "en")
                 .appendQueryParameter("user_id", String.valueOf(user.getId()))
                 .appendQueryParameter("start_message_id", String.valueOf(id))
-                .appendQueryParameter("count", "40")
+                .appendQueryParameter("count", "60")
                 .appendQueryParameter("v", "5.68")
                 .build();
 
@@ -234,14 +233,14 @@ class VKFetcher {
                 messages.add(message);
             }
 
-        } catch (Exception e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
 
         return messages;
     }
 
-    User getCurrentUser() {
+    User getInfoAboutCurrentUser() throws IOException {
         Uri userByIdUri = Uri.parse("https://api.vk.com/method/users.get")
                 .buildUpon()
                 .appendQueryParameter("access_token", accessToken)
@@ -251,12 +250,10 @@ class VKFetcher {
                 .build();
 
         try {
-
             String jsonString = getUrlString(userByIdUri.toString());
             JSONArray jsonArray = new JSONObject(jsonString).getJSONArray("response");
             return getUserFromJSON(jsonArray.getJSONObject(0));
-
-        } catch (IOException | JSONException e) {
+        } catch (JSONException e) {
             e.printStackTrace();
         }
 
@@ -270,7 +267,7 @@ class VKFetcher {
         message.setText(curr.getString("body"));
         message.setFromId(curr.getInt("from_id"));
         message.setUserId(curr.getInt("user_id"));
-        message.setTime(curr.getLong("date"));
+        message.setTime(curr.getLong("date") * 1000);
         message.setReadState(curr.getInt("read_state"));
 
         return message;
@@ -286,7 +283,7 @@ class VKFetcher {
         user.setPhotoURL(curr.getString("photo_100"));
 
         if (curr.has("last_seen")) {
-            user.setLastSeen(curr.getJSONObject("last_seen").getLong("time"));
+            user.setLastSeen(curr.getJSONObject("last_seen").getLong("time") * 1000);
         }
 
         return user;

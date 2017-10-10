@@ -15,7 +15,7 @@ import ua.nure.dzhafarov.vkontakte.R;
 import ua.nure.dzhafarov.vkontakte.models.User;
 import ua.nure.dzhafarov.vkontakte.utils.OnUserClickListener;
 
-public class UserAdapter extends RecyclerView.Adapter<UserAdapter.FriendHolder> {
+public class FriendAdapter extends RecyclerView.Adapter<FriendAdapter.FriendHolder> {
     
     class FriendHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
         
@@ -43,22 +43,20 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.FriendHolder> 
             fullName.setText(String.format(Locale.US, "%s %s", user.getFirstName(), user.getLastName()));
             
             if (user.isOnline()) {
-                lastSeen.setText("online");
+                lastSeen.setText(context.getString(R.string.online));
             } else {
-                SimpleDateFormat sdf = new SimpleDateFormat("dd MMM HH:mm", Locale.ROOT);
+                SimpleDateFormat sdf = new SimpleDateFormat(
+                        context.getString(R.string.date_time_form_user_last_seen), Locale.ROOT);
 
                 if (user.getLastSeen() != 0) {
-                    lastSeen.setText(context.getString(R.string.last_seen, sdf.format(user.getLastSeen() * 1000)));
+                    lastSeen.setText(context.getString(R.string.last_seen, sdf.format(user.getLastSeen())));
                 } else {
                     lastSeen.setText("");
                 }   
             }
 
-            Picasso.with(context)
-                    .load(user.getPhotoURL())
-                    .into(photoProfile);
+            Picasso.with(context).load(user.getPhotoURL()).into(photoProfile);
         }
-        
         
         @Override
         public void onClick(View v) {
@@ -70,7 +68,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.FriendHolder> 
     private OnUserClickListener<User> listener;
     private Context context;
     
-    public UserAdapter(List<User> users, Context context, OnUserClickListener<User> listener) {
+    public FriendAdapter(List<User> users, Context context, OnUserClickListener<User> listener) {
         this.users = users;
         this.listener = listener;
         this.context = context;

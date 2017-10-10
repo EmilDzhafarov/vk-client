@@ -9,17 +9,19 @@
     <string name="activity_communities">Communities</string>
     <string name="title_activity_initial">InitialActivity</string>
 
+    <string name="input_message_body">Enter your message here:</string>
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
-
+    <string name="user_has_removed" formatted="false">%s %s has been removed from your user list</string>
     <string name="action_settings">Settings</string>
 
     <string name="user_photo">User\'s photo</string>
     <string name="sex_0">Not specify</string>
     <string name="sex_1">Woman</string>
     <string name="sex_2">Man</string>
-    <string name="last_seen">Last seen: %s</string>
-
+    <string name="last_seen" formatted="false">Last seen: %s</string>
+    <string name="online">Online</string>
+    
     <string name="empty_status">-</string>
     <string name="empty_country">-</string>
     <string name="empty_city">-</string>
@@ -31,4 +33,22 @@
     <string name="label_city">City</string>
     <string name="label_status">Status</string>
     <string name="label_common_count">Common users</string>
+    
+    <string name="error_connect_server">Could not connect to vk servers</string>
+    <string name="error_remove_user" formatted="false">User %s is not removed</string>
+    <string name="error_send_message">Message is not sent</string>
+    <string name="error_load_current_user">Info about current user is not loaded</string>
+    
+    <string name="time_form">HH:mm</string>
+    <string name="date_form_this_year">MMMM dd</string>
+    <string name="date_form_other_year">MMMM dd yyyy</string>
+    <string name="date_time_form_user_last_seen">dd MMM HH:mm</string>
+    
+    <string name="success_send_message">Your message has been sent</string>
+    <plurals name="friends">
+        <item quantity="one">%1$s friend</item>
+        <item quantity="other">%1$s friends</item>
+    </plurals>
+    <string name="user_chat_title" formatted="false">%s %s</string>
+    <string name="user_typing" formatted="false">%s is typing$#8230</string>
 </resources>

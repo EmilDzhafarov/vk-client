@@ -19,11 +19,10 @@ import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import ua.nure.dzhafarov.vkontakte.R;
 import ua.nure.dzhafarov.vkontakte.activities.ActivityUserProfile;
-import ua.nure.dzhafarov.vkontakte.adapters.UserAdapter;
+import ua.nure.dzhafarov.vkontakte.adapters.FriendAdapter;
 import ua.nure.dzhafarov.vkontakte.models.User;
 import ua.nure.dzhafarov.vkontakte.utils.OnUserClickListener;
 import ua.nure.dzhafarov.vkontakte.utils.OperationListener;
@@ -32,13 +31,13 @@ import ua.nure.dzhafarov.vkontakte.utils.VKManager;
 import static ua.nure.dzhafarov.vkontakte.activities.ActivityUserProfile.REQUEST_USER_PROFILE;
 
 public class FragmentListUsers extends Fragment {
-    
+
     private RecyclerView recyclerView;
     private SwipeRefreshLayout swipeRefreshLayout;
-    private UserAdapter userAdapter;
+    private FriendAdapter friendAdapter;
     private VKManager vkManager;
     private List<User> users;
-    
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -67,11 +66,11 @@ public class FragmentListUsers extends Fragment {
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
 
         users = new ArrayList<>();
-        userAdapter = new UserAdapter(users, getActivity(), new OnUserClickListener<User>() {
+        friendAdapter = new FriendAdapter(users, getActivity(), new OnUserClickListener<User>() {
             @Override
             public void onUserClicked(User user, View view) {
                 if (view.getId() == R.id.option_dots) {
-                    showPopupMenu(view, user);    
+                    showPopupMenu(view, user);
                 } else {
                     Intent intent = new Intent(getActivity(), ActivityUserProfile.class);
                     intent.putExtra(REQUEST_USER_PROFILE, user);
@@ -79,14 +78,14 @@ public class FragmentListUsers extends Fragment {
                 }
             }
         });
-        recyclerView.setAdapter(userAdapter);
+        recyclerView.setAdapter(friendAdapter);
         vkManager = VKManager.getInstance();
-        
+
         loadingUsers();
     }
-    
+
     private void sendMessageInUI() {
-        Activity activity = getActivity();
+        final Activity activity = getActivity();
 
         if (activity != null) {
             activity.runOnUiThread(
@@ -94,8 +93,8 @@ public class FragmentListUsers extends Fragment {
                         @Override
                         public void run() {
                             Toast.makeText(
-                                    getActivity(),
-                                    "Your message has been sent",
+                                    activity,
+                                    activity.getString(R.string.success_send_message),
                                     Toast.LENGTH_LONG
                             ).show();
                         }
@@ -103,19 +102,29 @@ public class FragmentListUsers extends Fragment {
             );
         }
     }
-    
+
     private void loadingUsers() {
         swipeRefreshLayout.setRefreshing(true);
-        vkManager.loadUsers(new OperationListener<List<User>>() {
+        vkManager.loadFriends(new OperationListener<List<User>>() {
             @Override
             public void onSuccess(final List<User> friends) {
                 loadFriendsInUI(friends);
+            }
+
+            @Override
+            public void onFailure(String message) {
+                Toast.makeText(
+                        FragmentListUsers.this.getActivity(),
+                        message,
+                        Toast.LENGTH_SHORT
+                ).show();
             }
         });
     }
 
     private void updateTitle(Activity activity) {
-        activity.setTitle(String.format(Locale.ROOT, "%d Friends", users.size()));
+        String title = getResources().getQuantityString(R.plurals.friends, users.size(), users.size());
+        activity.setTitle(title);
     }
 
     private void showPopupMenu(View view, final User user) {
@@ -130,6 +139,15 @@ public class FragmentListUsers extends Fragment {
                             @Override
                             public void onSuccess(User object) {
                                 removeFriendInUI(object);
+                            }
+
+                            @Override
+                            public void onFailure(String message) {
+                                Toast.makeText(
+                                        FragmentListUsers.this.getActivity(),
+                                        message,
+                                        Toast.LENGTH_SHORT
+                                ).show();
                             }
                         });
                         break;
@@ -155,7 +173,7 @@ public class FragmentListUsers extends Fragment {
                         public void run() {
                             users.clear();
                             users.addAll(friends);
-                            userAdapter.notifyDataSetChanged();
+                            friendAdapter.notifyDataSetChanged();
                             swipeRefreshLayout.setRefreshing(false);
                             updateTitle(activity);
                         }
@@ -163,7 +181,7 @@ public class FragmentListUsers extends Fragment {
             );
         }
     }
-    
+
     private void removeFriendInUI(final User user) {
         final Activity activity = getActivity();
 
@@ -174,55 +192,70 @@ public class FragmentListUsers extends Fragment {
                         public void run() {
                             int pos = users.indexOf(user);
                             users.remove(pos);
-                            userAdapter.notifyItemRemoved(pos);
+                            friendAdapter.notifyItemRemoved(pos);
                             updateTitle(activity);
 
                             Toast.makeText(
-                                    getActivity(),
-                                    String.format(
-                                            Locale.ROOT,
-                                            "%s %s has been removed from your user list",
-                                            user.getFirstName(), user.getLastName()),
-                                    Toast.LENGTH_LONG
+                                    activity,
+                                    activity.getString(
+                                            R.string.user_has_removed, 
+                                            user.getFirstName(), user.getLastName()
+                                    ),
+                                    Toast.LENGTH_SHORT
                             ).show();
                         }
                     }
             );
         }
     }
-    
+
     private void createMessageDialog(final User user) {
-        final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        View view = getActivity().getLayoutInflater().inflate(R.layout.send_message_layout, null);
+        final Activity activity = getActivity();
+        
+        if (activity != null) {
+            final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+            View view = getActivity().getLayoutInflater().inflate(R.layout.send_message_layout, null);
 
-        final EditText editText = (EditText) view.findViewById(R.id.message);
-        final Button sendBtn = (Button) view.findViewById(R.id.send_button_message);
-        final Button cancelBtn = (Button) view.findViewById(R.id.cancel_button_message);
+            final EditText editText = (EditText) view.findViewById(R.id.message);
+            final Button sendBtn = (Button) view.findViewById(R.id.send_button_message);
+            final Button cancelBtn = (Button) view.findViewById(R.id.cancel_button_message);
 
-        final AlertDialog dialog = builder.setTitle("Enter your message here: ").setView(view).show();
+            final AlertDialog dialog = builder.setTitle(
+                    activity.getString(R.string.input_message_body)
+            ).setView(view).show();
 
-        sendBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                VKManager.getInstance().sendMessage(
-                        editText.getText().toString(),
-                        user.getId(),
-                        new OperationListener<Void>() {
-                            @Override
-                            public void onSuccess(Void object) {
-                                sendMessageInUI();
-                            }
-                        });
-                dialog.dismiss();
-            }
-        });
+            sendBtn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    VKManager.getInstance().sendMessage(
+                            editText.getText().toString(),
+                            user.getId(),
+                            new OperationListener<Void>() {
+                                @Override
+                                public void onSuccess(Void object) {
+                                    sendMessageInUI();
+                                }
 
-        cancelBtn.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-            }
-        });
+                                @Override
+                                public void onFailure(String message) {
+                                    Toast.makeText(
+                                            activity,
+                                            message, 
+                                            Toast.LENGTH_SHORT
+                                    ).show();
+                                }
+                            });
+                    dialog.dismiss();
+                }
+            });
+
+            cancelBtn.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dialog.dismiss();
+                }
+            });
+        }
     }
-    
+
 }

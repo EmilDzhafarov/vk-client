@@ -1,7 +1,6 @@
 package ua.nure.dzhafarov.vkontakte.adapters;
 
 import android.content.Context;
-import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.text.format.DateFormat;
 import android.view.Gravity;
@@ -10,10 +9,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
-
-import com.squareup.picasso.Picasso;
 
 import java.util.Calendar;
 import java.util.List;
@@ -69,7 +65,12 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
                 bodyParams.gravity = Gravity.END;
                 deliveryImageView.setVisibility(View.VISIBLE);
             } else {
-                messageBodyTextView.setBackground(context.getDrawable(R.drawable.even));
+                if (message.getReadState() == 0) {
+                    messageBodyTextView.setBackground(context.getDrawable(R.drawable.new_message_even));    
+                } else {
+                    messageBodyTextView.setBackground(context.getDrawable(R.drawable.even));    
+                }
+                
                 messageTimeTextView.setTextColor(context.getColor(R.color.text_color_get));
                 bodyParams.gravity = Gravity.START;
                 deliveryImageView.setVisibility(View.GONE);
@@ -78,9 +79,10 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
 
             linearLayout.setLayoutParams(bodyParams);
 
-            messageBodyTextView.setText(message.getText().trim());
+            messageBodyTextView.setText(message.getText());
             messageBodyTextView.setPadding(12, 12, 12, 12);
-            messageTimeTextView.setText(DateFormat.format("HH:mm", message.getTime() * 1000));
+            messageTimeTextView.setText(
+                    DateFormat.format(context.getString(R.string.time_form), message.getTime()));
         }
     }
 
@@ -104,46 +106,44 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
     public void onBindViewHolder(MessageHolder holder, int position) {
         Message m = messages.get(position);
         holder.bindMessage(m);
+        
+        Calendar cal1 = Calendar.getInstance(Locale.ROOT);
+        Calendar cal2 = Calendar.getInstance(Locale.ROOT);
+        Calendar now = Calendar.getInstance(Locale.ROOT);
+        cal1.setTimeInMillis(m.getTime());
+        
+        if (position == messages.size() - 1) {
+            checkOnCurrentYear(cal1, now, holder.messageDateTextView, m);
+        } else {
+            for (int i = position + 1; i < messages.size(); i++) {
+                cal2.setTimeInMillis(messages.get(i).getTime());
+                boolean sameDay = cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR);
 
-        long previousTs = 0;
-        long currentTs = m.getTime() * 1000;
-
-        if (position > 0) {
-            Message pm = messages.get(position - 1);
-            previousTs = pm.getTime() * 1000;
-        }
-
-        setTimeTextVisibility(currentTs, previousTs, holder.messageDateTextView);
+                if (!sameDay) {
+                    checkOnCurrentYear(cal1, now, holder.messageDateTextView, m);
+                } else {
+                    holder.messageDateTextView.setVisibility(View.GONE);
+                    holder.messageDateTextView.setText("");
+                    break;
+                }
+            }
+        }   
     }
-
+    
     @Override
     public int getItemCount() {
         return messages.size();
     }
 
-    private void setTimeTextVisibility(long ts1, long ts2, TextView timeText) {
-        if (ts2 != 0) {
-            Calendar cal1 = Calendar.getInstance();
-            Calendar cal2 = Calendar.getInstance();
-            cal1.setTimeInMillis(ts1);
-            cal2.setTimeInMillis(ts2);
-
-            boolean sameDay = cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR);
-
-            if (sameDay) {
-                timeText.setVisibility(View.GONE);
-                timeText.setText("");
-            } else {
-                timeText.setVisibility(View.VISIBLE);
-
-                boolean sameYear = cal1.get(Calendar.YEAR) == Calendar.getInstance(Locale.ROOT).get(Calendar.YEAR);
-
-                if (!sameYear) {
-                    timeText.setText(DateFormat.format("MMMM dd yyyy", ts2));
-                } else {
-                    timeText.setText(DateFormat.format("MMMM dd", ts2));
-                }
-            }   
+    private void checkOnCurrentYear(Calendar cal1, Calendar now, TextView textView, Message m) {
+        textView.setVisibility(View.VISIBLE);
+        
+        if (cal1.get(Calendar.YEAR) == now.get(Calendar.YEAR)) {
+            textView.setText(
+                    DateFormat.format(context.getString(R.string.date_form_this_year), m.getTime()));
+        } else {
+            textView.setText(
+                    DateFormat.format(context.getString(R.string.date_form_other_year), m.getTime()));
         }
     }
 }

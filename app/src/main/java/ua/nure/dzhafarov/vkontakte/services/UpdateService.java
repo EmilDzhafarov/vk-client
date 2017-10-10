@@ -3,6 +3,7 @@ package ua.nure.dzhafarov.vkontakte.services;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -83,6 +84,11 @@ public class UpdateService extends Service {
                     ex.printStackTrace();
                 }
             }
+
+            @Override
+            public void onFailure(String message) {
+                Toast.makeText(UpdateService.this, message, Toast.LENGTH_SHORT).show();
+            }
         });
     }
 
@@ -108,9 +114,9 @@ public class UpdateService extends Service {
 
     private void sendBroadcastToShowNewMessage(JSONArray event) throws JSONException {
         Message message = new Message();
-
+        
         message.setMessageId(event.getInt(1));
-        message.setTime(event.getLong(4));
+        message.setTime(event.getLong(4) * 1000);
         message.setText(event.getString(5));
         message.setTs(vkManager.getCurrentLongPoll().getTs());
 
@@ -125,6 +131,7 @@ public class UpdateService extends Service {
         if (mask == 49) {
             message.setFromId(peerId);
             message.setUserId(VKManager.getInstance().getCurrentUser().getId());
+            message.setReadState(0);
         }
 
         MessageLab.getInstance(this).addMessage(message);

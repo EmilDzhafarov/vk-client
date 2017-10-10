@@ -12,6 +12,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import ua.nure.dzhafarov.vkontakte.R;
 import ua.nure.dzhafarov.vkontakte.models.LongPoll;
@@ -41,28 +42,27 @@ public class MainActivity extends AppCompatActivity {
     private ProgressBar progressBar;
     private TextView title;
 
-    
-    
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        
+
         String token = getAccessToken();
         long time = getExpiresTime();
-        
+
         if (token.equals(EMPTY_ACCESS_TOKEN) || System.currentTimeMillis() > time) {
             setContentView(R.layout.activity_main);
 
             webView = (WebView) findViewById(R.id.authorize_web_view);
             webView.setWebViewClient(webViewClient);
             webView.setVisibility(View.GONE);
-            
+
             progressBar = (ProgressBar) findViewById(R.id.progress_bar);
             progressBar.setVisibility(View.VISIBLE);
 
             title = (TextView) findViewById(R.id.title);
             title.setVisibility(View.VISIBLE);
-            
+
             webView.loadUrl(authorizeUrl);
         } else {
             startInitialActivity();
@@ -70,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private WebViewClient webViewClient = new WebViewClient() {
-        
+
         @Override
         public void onPageStarted(WebView view, String url, Bitmap favicon) {
             String tokenFragment = "#access_token=";
@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
 
             int startExpiresIn = url.indexOf(tokenUntil);
             int endExpiresIn = url.indexOf(expiresInUntil);
-            
+
             if (startToken > -1 && startExpiresIn > -1) {
                 String accessToken = url.substring(startToken + tokenFragment.length(), endToken);
 
@@ -90,7 +90,7 @@ public class MainActivity extends AppCompatActivity {
                         url.substring(startExpiresIn + tokenUntil.length(), endExpiresIn);
 
                 int expiresIn = Integer.parseInt(expiresInStr) * 1000;
-                
+
                 saveAccessToken(accessToken);
                 saveExpiresTime(System.currentTimeMillis() + expiresIn);
                 startInitialActivity();
@@ -100,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
-            
+
             progressBar.setVisibility(View.GONE);
             title.setVisibility(View.GONE);
             webView.setVisibility(View.VISIBLE);
@@ -109,15 +109,28 @@ public class MainActivity extends AppCompatActivity {
 
     private void startInitialActivity() {
         final VKManager vkManager = VKManager.getInstance();
+        
         vkManager.initialize(this, getAccessToken(), new OperationListener<LongPoll>() {
             @Override
             public void onSuccess(LongPoll longPoll) {
-                Intent serviceIntent = new Intent(MainActivity.this, UpdateService.class);
-                startService(serviceIntent);
-                
                 Intent intent = new Intent(MainActivity.this, ActivityListFriends.class);
                 startActivity(intent);
                 finish();
+                
+                Intent serviceIntent = new Intent(MainActivity.this, UpdateService.class);
+                startService(serviceIntent);
+            }
+
+            @Override
+            public void onFailure(final String message) {
+                runOnUiThread(
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();              
+                            }
+                        }
+                );
             }
         });
     }
@@ -128,7 +141,7 @@ public class MainActivity extends AppCompatActivity {
         editor.putString(ACCESS_TOKEN, accessToken);
         editor.apply();
     }
- 
+
     private String getAccessToken() {
         SharedPreferences prefs = getPreferences(MODE_PRIVATE);
         return prefs.getString(ACCESS_TOKEN, EMPTY_ACCESS_TOKEN);
