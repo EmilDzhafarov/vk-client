@@ -5,22 +5,40 @@ import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.design.widget.NavigationView;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.ProgressBar;
+import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.squareup.picasso.Picasso;
+
+import de.hdodenhof.circleimageview.CircleImageView;
 import ua.nure.dzhafarov.vkontakte.R;
+import ua.nure.dzhafarov.vkontakte.fragments.FragmentListCommunities;
+import ua.nure.dzhafarov.vkontakte.fragments.FragmentListUsers;
 import ua.nure.dzhafarov.vkontakte.models.LongPoll;
+import ua.nure.dzhafarov.vkontakte.models.User;
 import ua.nure.dzhafarov.vkontakte.services.UpdateService;
 import ua.nure.dzhafarov.vkontakte.utils.OperationListener;
 import ua.nure.dzhafarov.vkontakte.utils.VKManager;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity 
+        implements NavigationView.OnNavigationItemSelectedListener{
 
     private static final String ACCESS_TOKEN = "access_token";
     private static final String EMPTY_ACCESS_TOKEN = "empty_access_token";
@@ -39,40 +57,104 @@ public class MainActivity extends AppCompatActivity {
             .toString();
 
     private WebView webView;
-    private ProgressBar progressBar;
-    private TextView title;
+    private LinearLayout linearLayoutLoading;
 
+    private TextView fullName;
+    private TextView isOnline;
+    private CircleImageView photo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_initial);
 
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
+                this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        drawer.setDrawerListener(toggle);
+        toggle.syncState();
+
+        NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
+        navigationView.setNavigationItemSelectedListener(this);
+        
         String token = getAccessToken();
         long time = getExpiresTime();
 
+        webView = (WebView) findViewById(R.id.authorize_web_view);
+        webView.setWebViewClient(webViewClient);
+        linearLayoutLoading = (LinearLayout) findViewById(R.id.linear_layout_loading);
+
+        View header = navigationView.getHeaderView(0);
+        fullName = (TextView) header.findViewById(R.id.header_user_full_name);
+        isOnline = (TextView) header.findViewById(R.id.header_user_is_online);
+        photo = (CircleImageView) header.findViewById(R.id.header_user_photo);
+        
         if (token.equals(EMPTY_ACCESS_TOKEN) || System.currentTimeMillis() > time) {
-            setContentView(R.layout.activity_main);
-
-            webView = (WebView) findViewById(R.id.authorize_web_view);
-            webView.setWebViewClient(webViewClient);
             webView.setVisibility(View.GONE);
-
-            progressBar = (ProgressBar) findViewById(R.id.progress_bar);
-            progressBar.setVisibility(View.VISIBLE);
-
-            title = (TextView) findViewById(R.id.title);
-            title.setVisibility(View.VISIBLE);
-
+            linearLayoutLoading.setVisibility(View.VISIBLE);
             webView.loadUrl(authorizeUrl);
         } else {
-            startInitialActivity();
+            startSession();
         }
     }
 
+    @Override
+    public void onBackPressed() {
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
+    }
+    
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.initial, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.action_settings) {
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    @SuppressWarnings("StatementWithEmptyBody")
+    @Override
+    public boolean onNavigationItemSelected(MenuItem item) {
+        // Handle navigation view item clicks here.
+
+        int id = item.getItemId();
+
+        if (id == R.id.nav_communities) {
+            addFragment(new FragmentListCommunities());
+        }
+
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer.closeDrawer(GravityCompat.START);
+        return true;
+    }
+    
     private WebViewClient webViewClient = new WebViewClient() {
 
         @Override
         public void onPageStarted(WebView view, String url, Bitmap favicon) {
+            
+        }
+
+        @Override
+        public void onPageFinished(WebView view, String url) {
+            super.onPageFinished(view, url);
+
             String tokenFragment = "#access_token=";
             String tokenUntil = "&expires_in=";
             String expiresInUntil = "&user_id";
@@ -93,46 +175,76 @@ public class MainActivity extends AppCompatActivity {
 
                 saveAccessToken(accessToken);
                 saveExpiresTime(System.currentTimeMillis() + expiresIn);
-                startInitialActivity();
+
+                webView.setVisibility(View.GONE);
+                startSession();
+            } else {
+                linearLayoutLoading.setVisibility(View.GONE);
+                webView.setVisibility(View.VISIBLE);   
             }
-        }
-
-        @Override
-        public void onPageFinished(WebView view, String url) {
-            super.onPageFinished(view, url);
-
-            progressBar.setVisibility(View.GONE);
-            title.setVisibility(View.GONE);
-            webView.setVisibility(View.VISIBLE);
         }
     };
 
-    private void startInitialActivity() {
-        final VKManager vkManager = VKManager.getInstance();
-        
-        vkManager.initialize(this, getAccessToken(), new OperationListener<LongPoll>() {
-            @Override
-            public void onSuccess(LongPoll longPoll) {
-                Intent intent = new Intent(MainActivity.this, ActivityListFriends.class);
-                startActivity(intent);
-                finish();
-                
-                Intent serviceIntent = new Intent(MainActivity.this, UpdateService.class);
-                startService(serviceIntent);
-            }
+    private void initializeCurrentUser() {
+        if (fullName.getText().toString().isEmpty()) {
+            VKManager.getInstance().loadCurrentUser(new OperationListener<User>() {
+                @Override
+                public void onSuccess(User object) {
+                    loadCurrentUserInUI(object);
+                }
 
-            @Override
-            public void onFailure(final String message) {
-                runOnUiThread(
-                        new Runnable() {
-                            @Override
-                            public void run() {
-                                Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();              
+                @Override
+                public void onFailure(final String message) {
+                    MainActivity.this.runOnUiThread(
+                            new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show();
+                                }
                             }
+                    );
+                }
+            });
+        }
+    }
+    
+    private void addFragment(Fragment fr) {
+        FragmentManager fm = getSupportFragmentManager();
+        Fragment fragment = fm.findFragmentById(R.id.fragment_host);
+
+        if (fragment == null) {
+            fragment = fr;
+            fm.beginTransaction().add(R.id.fragment_host, fragment).commit();
+        } else {
+            FragmentTransaction fragmentTransaction = fm.beginTransaction();
+            fragmentTransaction.replace(R.id.fragment_host, fr);
+            fragmentTransaction.addToBackStack(null);
+            fragmentTransaction.commit();
+        }
+    }
+    
+    private void loadCurrentUserInUI(final User currUser) {
+        if (currUser != null) {
+            runOnUiThread(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            fullName.setText(currUser.getFirstName() + " " + currUser.getLastName());
+                            isOnline.setText(currUser.isOnline() ? "online" : "offline");
+                            Picasso.with(MainActivity.this).load(currUser.getPhotoURL()).into(photo);
                         }
-                );
-            }
-        });
+                    }
+            );
+        }
+    }
+    
+    private void startSession() {
+        final VKManager vkManager = VKManager.getInstance();
+        vkManager.initialize(this, getAccessToken());
+        initializeCurrentUser();
+        Intent serviceIntent = new Intent(MainActivity.this, UpdateService.class);
+        startService(serviceIntent);
+        addFragment(new FragmentListUsers());
     }
 
     private void saveAccessToken(String accessToken) {

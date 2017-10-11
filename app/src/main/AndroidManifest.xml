@@ -3,7 +3,8 @@
     package="ua.nure.dzhafarov.vkontakte">
 
     <uses-permission android:name="android.permission.INTERNET" />
-
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -11,7 +12,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".activities.MainActivity">
+        <activity android:name=".activities.MainActivity"
+            android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -19,21 +21,14 @@
             </intent-filter>
         </activity>
         <service android:name=".services.UpdateService"/>
-        
-        <activity
-            android:name=".activities.ActivityListCommunities"
-            android:label="@string/activity_communities"
-            android:theme="@style/AppTheme.NoActionBar"/>
+
         <activity
             android:name=".activities.ActivityChat"
-            android:windowSoftInputMode="adjustResize"
-            android:theme="@style/AppTheme.NoActionBar"/>
-        <activity
-            android:name=".activities.ActivityListFriends"
-            android:label="@string/activity_friends"
-            android:theme="@style/AppTheme.NoActionBar"/>
+            android:theme="@style/AppTheme.NoActionBar"
+            android:windowSoftInputMode="adjustResize"/>
+        
         <activity android:name=".activities.ActivityUserProfile"
-            android:theme="@style/AppTheme.NoActionBar"/>
+            android:parentActivityName=".activities.MainActivity"/>
+        
     </application>
-
 </manifest>

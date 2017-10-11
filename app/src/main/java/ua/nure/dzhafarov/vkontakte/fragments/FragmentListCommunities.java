@@ -83,11 +83,15 @@ public class FragmentListCommunities extends Fragment {
 
             @Override
             public void onFailure(String message) {
-                Toast.makeText(
-                        FragmentListCommunities.this.getActivity(),
-                        message,
-                        Toast.LENGTH_SHORT
-                ).show();
+                Activity activity = getActivity();
+                
+                if (activity != null) {
+                    Toast.makeText(
+                            activity,
+                            message,
+                            Toast.LENGTH_SHORT
+                    ).show();   
+                }
             }
         });
     }

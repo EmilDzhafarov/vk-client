@@ -113,11 +113,15 @@ public class FragmentListUsers extends Fragment {
 
             @Override
             public void onFailure(String message) {
-                Toast.makeText(
-                        FragmentListUsers.this.getActivity(),
-                        message,
-                        Toast.LENGTH_SHORT
-                ).show();
+                Activity activity = getActivity();
+                
+                if (activity != null) {
+                    Toast.makeText(
+                            FragmentListUsers.this.getActivity(),
+                            message,
+                            Toast.LENGTH_SHORT
+                    ).show();   
+                }
             }
         });
     }
@@ -143,11 +147,15 @@ public class FragmentListUsers extends Fragment {
 
                             @Override
                             public void onFailure(String message) {
-                                Toast.makeText(
-                                        FragmentListUsers.this.getActivity(),
-                                        message,
-                                        Toast.LENGTH_SHORT
-                                ).show();
+                                Activity activity = getActivity();
+                                
+                                if (activity != null) {
+                                    Toast.makeText(
+                                            activity,
+                                            message,
+                                            Toast.LENGTH_SHORT
+                                    ).show();   
+                                }
                             }
                         });
                         break;
@@ -198,7 +206,7 @@ public class FragmentListUsers extends Fragment {
                             Toast.makeText(
                                     activity,
                                     activity.getString(
-                                            R.string.user_has_removed, 
+                                            R.string.user_has_removed,
                                             user.getFirstName(), user.getLastName()
                                     ),
                                     Toast.LENGTH_SHORT
@@ -211,7 +219,7 @@ public class FragmentListUsers extends Fragment {
 
     private void createMessageDialog(final User user) {
         final Activity activity = getActivity();
-        
+
         if (activity != null) {
             final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
             View view = getActivity().getLayoutInflater().inflate(R.layout.send_message_layout, null);
@@ -237,12 +245,19 @@ public class FragmentListUsers extends Fragment {
                                 }
 
                                 @Override
-                                public void onFailure(String message) {
-                                    Toast.makeText(
-                                            activity,
-                                            message, 
-                                            Toast.LENGTH_SHORT
-                                    ).show();
+                                public void onFailure(final String message) {
+                                    activity.runOnUiThread(
+                                            new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    Toast.makeText(
+                                                            activity,
+                                                            message,
+                                                            Toast.LENGTH_SHORT
+                                                    ).show();
+                                                }
+                                            }
+                                    );
                                 }
                             });
                     dialog.dismiss();

@@ -50,5 +50,6 @@
         <item quantity="other">%1$s friends</item>
     </plurals>
     <string name="user_chat_title" formatted="false">%s %s</string>
-    <string name="user_typing" formatted="false">%s is typing$#8230</string>
+    <string name="user_typing" formatted="false">%s is typing&#8230;</string>
+    <string name="title_for_waiting">Just a few moments please&#8230;</string>
 </resources>

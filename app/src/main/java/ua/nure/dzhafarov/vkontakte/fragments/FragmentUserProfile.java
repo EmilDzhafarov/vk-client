@@ -95,6 +95,8 @@ public class FragmentUserProfile extends Fragment implements View.OnClickListene
                 }
             }
             
+            getActivity().setTitle(getString(R.string.user_chat_title, user.getFirstName(), user.getLastName()));
+            
             Picasso.with(FragmentUserProfile.this.getActivity())
                     .load(user.getPhotoURL())
                     .into(profileImage);

@@ -18,7 +18,8 @@ public class VKManager {
 
     private static VKManager instance;
 
-    private VKManager() {}
+    private VKManager() {
+    }
 
     private VKFetcher fetcher;
     private LongPoll longPoll;
@@ -34,15 +35,14 @@ public class VKManager {
         return instance;
     }
 
-    public synchronized void initialize(Context context, String token, OperationListener<LongPoll> listener) {
+    public synchronized void initialize(Context context, String token) {
         if (fetcher == null) {
             fetcher = new VKFetcher(token);
         }
 
-        this.context = context.getApplicationContext(); 
+        this.context = context.getApplicationContext();
         currentUser = new User();
         longPoll = new LongPoll();
-        initLongPoll(listener);
         messageLab = MessageLab.getInstance(this.context);
     }
 
@@ -53,7 +53,7 @@ public class VKManager {
                     public void run() {
                         try {
                             List<User> friends = fetcher.getAllFriends();
-                            listener.onSuccess(friends);   
+                            listener.onSuccess(friends);
                         } catch (IOException iex) {
                             listener.onFailure(context.getString(R.string.error_connect_server));
                         }
@@ -69,7 +69,7 @@ public class VKManager {
                     public void run() {
                         try {
                             List<Community> communities = fetcher.getAllCommunities();
-                            listener.onSuccess(communities);   
+                            listener.onSuccess(communities);
                         } catch (IOException iex) {
                             listener.onFailure(context.getString(R.string.error_connect_server));
                         }
@@ -85,7 +85,7 @@ public class VKManager {
                     public void run() {
                         try {
                             List<Message> messages = fetcher.getChatWith(user, curr);
-                            listener.onChatLoaded(messages, curr);   
+                            listener.onChatLoaded(messages, curr);
                         } catch (IOException iex) {
                             listener.onFailure(context.getString(R.string.error_connect_server));
                         }
@@ -101,7 +101,7 @@ public class VKManager {
                     public void run() {
                         try {
                             fetcher.sendMessageToUser(message, id);
-                            listener.onSuccess(null);    
+                            listener.onSuccess(null);
                         } catch (IOException iex) {
                             listener.onFailure(context.getString(R.string.error_connect_server));
                         }
@@ -168,7 +168,7 @@ public class VKManager {
                             } else {
                                 listener.onFailure(context.getString(R.string.error_remove_user));
                             }
-                            
+
                         } catch (IOException iex) {
                             listener.onFailure(context.getString(R.string.error_connect_server));
                         }
@@ -179,7 +179,7 @@ public class VKManager {
 
     public void connectToLongPollServer(final Long ts, OperationListener<JSONArray> eventListener) {
         try {
-            fetcher.connectToLongPollServer(ts, eventListener);   
+            fetcher.connectToLongPollServer(ts, eventListener);
         } catch (IOException iex) {
             eventListener.onFailure(context.getString(R.string.error_connect_server));
         }
@@ -229,25 +229,18 @@ public class VKManager {
         return longPoll;
     }
 
-    private void initLongPoll(final OperationListener<LongPoll> listener) {
-        new Thread(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            LongPoll curr = fetcher.getLongPollServer();
+    public void initLongPoll(final OperationListener<LongPoll> listener) {
+        try {
+            LongPoll curr = fetcher.getLongPollServer();
 
-                            longPoll.setKey(curr.getKey());
-                            longPoll.setServer(curr.getServer());
-                            longPoll.setTs(curr.getTs());
+            longPoll.setKey(curr.getKey());
+            longPoll.setServer(curr.getServer());
+            longPoll.setTs(curr.getTs());
 
-                            listener.onSuccess(curr);
+            listener.onSuccess(curr);
 
-                        } catch (IOException iex) {
-                            listener.onFailure(context.getString(R.string.error_connect_server));
-                        }
-                    }
-                }
-        ).start();
+        } catch (IOException iex) {
+            listener.onFailure(context.getString(R.string.error_connect_server));
+        }
     }
 }

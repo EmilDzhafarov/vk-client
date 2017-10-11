@@ -9,6 +9,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import ua.nure.dzhafarov.vkontakte.database.MessageLab;
+import ua.nure.dzhafarov.vkontakte.models.LongPoll;
 import ua.nure.dzhafarov.vkontakte.models.Message;
 import ua.nure.dzhafarov.vkontakte.utils.OperationListener;
 import ua.nure.dzhafarov.vkontakte.utils.VKManager;
@@ -60,36 +61,51 @@ public class UpdateService extends Service {
     private void startConnectingLongPollService() {
         final Long currTs = vkManager.getCurrentLongPoll().getTs();
 
-        vkManager.connectToLongPollServer(currTs, new OperationListener<JSONArray>() {
-            @Override
-            public void onSuccess(JSONArray object) {
-                try {
-
-                    for (int i = 0; i < object.length(); i++) {
-                        JSONArray event = object.getJSONArray(i);
-                        int eventCode = event.getInt(0);
-                        
-                        if (eventCode == 4) {
-                            sendBroadcastToShowNewMessage(event);
-                        } else if (eventCode == 7) {
-                            sendBroadcastToShowReadingEvent(event);
-                        } else if (eventCode == 61) {
-                            sendBroadcastToShowUserTypes(event);
-                        }
-                    }
-
-                    startConnectingLongPollService();
-
-                } catch (JSONException ex) {
-                    ex.printStackTrace();
+        if (currTs == 0) {
+            vkManager.initLongPoll(new OperationListener<LongPoll>() {
+                @Override
+                public void onSuccess(LongPoll object) {
+                     startConnectingLongPollService();  
                 }
-            }
 
-            @Override
-            public void onFailure(String message) {
-                Toast.makeText(UpdateService.this, message, Toast.LENGTH_SHORT).show();
-            }
-        });
+                @Override
+                public void onFailure(String message) {
+
+                }
+            });
+            
+        } else {
+            vkManager.connectToLongPollServer(currTs, new OperationListener<JSONArray>() {
+                @Override
+                public void onSuccess(JSONArray object) {
+                    try {
+
+                        for (int i = 0; i < object.length(); i++) {
+                            JSONArray event = object.getJSONArray(i);
+                            int eventCode = event.getInt(0);
+
+                            if (eventCode == 4) {
+                                sendBroadcastToShowNewMessage(event);
+                            } else if (eventCode == 7) {
+                                sendBroadcastToShowReadingEvent(event);
+                            } else if (eventCode == 61) {
+                                sendBroadcastToShowUserTypes(event);
+                            }
+                        }
+
+                        startConnectingLongPollService();
+
+                    } catch (JSONException ex) {
+                        ex.printStackTrace();
+                    }
+                }
+
+                @Override
+                public void onFailure(String message) {
+                    
+                }
+            });    
+        }
     }
 
     private void sendBroadcastToShowUserTypes(JSONArray data) throws JSONException {

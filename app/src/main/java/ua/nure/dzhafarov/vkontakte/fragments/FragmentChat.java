@@ -5,6 +5,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -83,9 +85,10 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
         recyclerView.setLayoutManager(manager);
 
         destUser = (User) getActivity().getIntent().getSerializableExtra(REQUEST_USER_PROFILE);
+        Activity activity = getActivity();
         
-        if (destUser != null) {
-            getActivity().setTitle(
+        if (destUser != null && activity != null) {
+            activity.setTitle(
                     getString(
                             R.string.user_chat_title,
                             destUser.getFirstName(),
@@ -138,12 +141,23 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
             }
 
             @Override
-            public void onFailure(String message) {
-                Toast.makeText(
-                        getActivity(),
-                        message,
-                        Toast.LENGTH_SHORT
-                ).show();
+            public void onFailure(final String message) {
+                Activity activity = getActivity();
+                
+                if (activity != null) {
+                    activity.runOnUiThread(
+                            new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(
+                                            getActivity(),
+                                            message,
+                                            Toast.LENGTH_SHORT
+                                    ).show();                   
+                                }
+                            }
+                    );
+                }
             }
         });
     }
@@ -228,26 +242,41 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
         vkManager.sendMessage(message, message.getUserId(), new OperationListener<Message>() {
             @Override
             public void onSuccess(final Message me) {
-                getActivity().runOnUiThread(
-                        new Runnable() {
-                            @Override
-                            public void run() {
-                                messageLab.updateMessage(me);
-                                int pos = messages.indexOf(me);
-                                messages.set(pos, me);
-                                messageAdapter.notifyItemChanged(pos);
+                Activity activity = getActivity();
+                
+                if (activity != null) {
+                    activity.runOnUiThread(
+                            new Runnable() {
+                                @Override
+                                public void run() {
+                                    messageLab.updateMessage(me);
+                                    int pos = messages.indexOf(me);
+                                    messages.set(pos, me);
+                                    messageAdapter.notifyItemChanged(pos);
+                                }
                             }
-                        }
-                );
+                    );   
+                }
             }
 
             @Override
-            public void onFailure(String message) {
-                Toast.makeText(
-                        getActivity(),
-                        message,
-                        Toast.LENGTH_SHORT
-                ).show();
+            public void onFailure(final String message) {
+                Activity activity = getActivity();
+                
+                if (activity != null) {
+                    activity.runOnUiThread(
+                            new Runnable() {
+                                @Override
+                                public void run() {
+                                    Toast.makeText(
+                                            getActivity(),
+                                            message,
+                                            Toast.LENGTH_SHORT
+                                    ).show();                   
+                                }
+                            }
+                    );
+                }
             }
         });
     }
@@ -261,7 +290,7 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
 
         @Override
         public void onFailure(String message) {
-            
+            // skip this method here
         }
     };
     
@@ -273,8 +302,11 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
     
     private class MessageReceiver extends BroadcastReceiver {
 
+        private Animation animation = new AlphaAnimation(0.0f, 1.0f);
+        
         public MessageReceiver() {
             super();
+
             animation.setAnimationListener(new Animation.AnimationListener() {
                 @Override
                 public void onAnimationStart(Animation animation) {
@@ -296,21 +328,19 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
             animation.setDuration(5000);
             animation.setStartOffset(20);
         }
-
-        private Animation animation = new AlphaAnimation(0.0f, 1.0f);
         
         @Override
         public void onReceive(Context context, final Intent intent) {
-            Activity activity = getActivity();
-            
-            if (intent.getAction().equals(UpdateService.ACTION_SEND_MESSAGE_VK)) {
-                
-                if (activity != null) {
+            final Activity activity = getActivity();
+         
+            if (activity != null) {
+                if (intent.getAction().equals(UpdateService.ACTION_SEND_MESSAGE_VK)) {
                     activity.runOnUiThread(
                             new Runnable() {
                                 @Override
                                 public void run() {
-                                    List<Message> mess = messageLab.getMessagesByFromId(destUser.getId(),
+                                    List<Message> mess = messageLab.getMessagesByFromId(
+                                            destUser.getId(),
                                             vkManager.getCurrentLongPoll().getTs()
                                     );
 
@@ -323,18 +353,15 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
                             }
                     );
                 }
-            }
-            
-            if (intent.getAction().equals(UpdateService.ACTION_USER_READ_MESSAGE)) {
-               
-                if (activity != null) {
+
+                if (intent.getAction().equals(UpdateService.ACTION_USER_READ_MESSAGE)) {
                     activity.runOnUiThread(
                             new Runnable() {
                                 @Override
                                 public void run() {
                                     int userId = intent.getIntExtra(UpdateService.CURRENT_USER_ID, -1);
                                     int localMessageId = intent.getIntExtra(UpdateService.MESSAGE_LOCAL_ID, -1);
-                                    
+
                                     if (userId != -1 && localMessageId != -1) {
                                         int pos = 0;
                                         for (int i = 0; i < messages.size(); i++) {
@@ -343,34 +370,32 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
                                                 break;
                                             }
                                         }
-                                        
+
                                         for (int j = pos; j < messages.size(); j++) {
                                             messages.get(j).setReadState(1);
                                         }
-                                        
+
                                         messageAdapter.notifyItemRangeChanged(pos, messages.size() - pos - 1);
                                     }
                                 }
                             }
                     );
                 }
-            }
-            
-            if (intent.getAction().equals(UpdateService.ACTION_USER_TYPES_MESSAGE)) {
-               if (activity != null) {
-                   activity.runOnUiThread(
-                           new Runnable() {
-                               @Override
-                               public void run() {
-                                   int userId = intent.getIntExtra(UpdateService.CURRENT_USER_ID, -1);
-                                   
-                                   if (userId != -1) {
-                                       userTypesMessageTextView.startAnimation(animation);
-                                   }
-                               }
-                           }
-                   );
-               }
+
+                if (intent.getAction().equals(UpdateService.ACTION_USER_TYPES_MESSAGE)) {
+                    activity.runOnUiThread(
+                            new Runnable() {
+                                @Override
+                                public void run() {
+                                    int userId = intent.getIntExtra(UpdateService.CURRENT_USER_ID, -1);
+
+                                    if (userId != -1) {
+                                        userTypesMessageTextView.startAnimation(animation);
+                                    }
+                                }
+                            }
+                    );
+                }
             }
         }
     }
