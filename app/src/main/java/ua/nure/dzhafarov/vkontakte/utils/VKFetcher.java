@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Locale;
 
 import ua.nure.dzhafarov.vkontakte.models.Community;
+import ua.nure.dzhafarov.vkontakte.models.Photo;
 import ua.nure.dzhafarov.vkontakte.models.User;
 import ua.nure.dzhafarov.vkontakte.models.LongPoll;
 import ua.nure.dzhafarov.vkontakte.models.Message;
@@ -86,6 +87,37 @@ class VKFetcher {
         return communities;
     }
 
+    List<Photo> getAllPhotos(Integer ownerId, String size) throws IOException {
+        List<Photo> photos = new ArrayList<>();
+
+        Uri photosURI = Uri.parse("https://api.vk.com/method/photos.getAll")
+                .buildUpon()
+                .appendQueryParameter("v", "5.68")
+                .appendQueryParameter("access_token", accessToken)
+                .appendQueryParameter("owner_id", ownerId.toString())
+                .appendQueryParameter("lang", "en")
+                .appendQueryParameter("count","36")
+                .appendQueryParameter("extended", "1")
+                .appendQueryParameter("photo_sizes", "1")
+                .build();
+
+        try {
+            String jsonString = getUrlString(photosURI.toString());
+            JSONObject jsonObject = new JSONObject(jsonString).getJSONObject("response");
+            JSONArray jsonArray = jsonObject.getJSONArray("items");
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                Photo photo = getPhotoFromJSON(jsonArray.getJSONObject(i), size);
+                photos.add(photo);
+            }
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return photos;
+    }
+    
     Integer sendMessageToUser(String message, int userId) throws IOException {
         Uri sendMessageURI = Uri.parse("https://api.vk.com/method/messages.send")
                 .buildUpon()
@@ -300,6 +332,26 @@ class VKFetcher {
         return community;
     }
 
+    private Photo getPhotoFromJSON(JSONObject curr, String size) throws JSONException {
+        Photo photo = new Photo();
+        
+        photo.setId(curr.getInt("id"));
+        photo.setOwnerId(curr.getInt("owner_id"));
+        
+        JSONArray sizes = curr.getJSONArray("sizes");
+        
+        for (int i = 0; i < sizes.length(); i++) {
+            JSONObject obj = sizes.getJSONObject(i);
+            
+            if (size.equals(obj.getString("type"))) {
+                photo.setPhotoURL(obj.getString("src"));
+                break;
+            }
+        }
+        
+        return photo;
+    }
+    
     private byte[] getUrlBytes(String urlSpec) throws IOException {
         URL url = new URL(urlSpec);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();

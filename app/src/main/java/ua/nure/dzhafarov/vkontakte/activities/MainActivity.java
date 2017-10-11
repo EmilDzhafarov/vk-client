@@ -20,7 +20,6 @@ import android.view.View;
 
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -30,8 +29,8 @@ import com.squareup.picasso.Picasso;
 import de.hdodenhof.circleimageview.CircleImageView;
 import ua.nure.dzhafarov.vkontakte.R;
 import ua.nure.dzhafarov.vkontakte.fragments.FragmentListCommunities;
+import ua.nure.dzhafarov.vkontakte.fragments.FragmentListPhotos;
 import ua.nure.dzhafarov.vkontakte.fragments.FragmentListUsers;
-import ua.nure.dzhafarov.vkontakte.models.LongPoll;
 import ua.nure.dzhafarov.vkontakte.models.User;
 import ua.nure.dzhafarov.vkontakte.services.UpdateService;
 import ua.nure.dzhafarov.vkontakte.utils.OperationListener;
@@ -107,7 +106,17 @@ public class MainActivity extends AppCompatActivity
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
-            super.onBackPressed();
+            int fragments = getSupportFragmentManager().getBackStackEntryCount();
+
+            if (fragments == 1) {
+                finish();
+            } else {
+                if (getFragmentManager().getBackStackEntryCount() > 1) {
+                    getFragmentManager().popBackStack();
+                } else {
+                    super.onBackPressed();
+                }
+            }
         }
     }
     
@@ -137,6 +146,8 @@ public class MainActivity extends AppCompatActivity
 
         if (id == R.id.nav_communities) {
             addFragment(new FragmentListCommunities());
+        } else if (id == R.id.nav_photos) {
+            addFragment(new FragmentListPhotos());
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -145,12 +156,7 @@ public class MainActivity extends AppCompatActivity
     }
     
     private WebViewClient webViewClient = new WebViewClient() {
-
-        @Override
-        public void onPageStarted(WebView view, String url, Bitmap favicon) {
-            
-        }
-
+        
         @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
@@ -270,4 +276,5 @@ public class MainActivity extends AppCompatActivity
         SharedPreferences prefs = getPreferences(MODE_PRIVATE);
         return prefs.getLong(EXPIRES_TIME, EMPTY_EXPIRES_TIME);
     }
+    
 }

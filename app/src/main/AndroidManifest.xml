@@ -3,8 +3,8 @@
     package="ua.nure.dzhafarov.vkontakte">
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
-    
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -12,7 +12,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".activities.MainActivity"
+        <activity
+            android:name=".activities.MainActivity"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -20,15 +21,20 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <service android:name=".services.UpdateService"/>
+
+        <service android:name=".services.UpdateService" />
 
         <activity
             android:name=".activities.ActivityChat"
-            android:theme="@style/AppTheme.NoActionBar"
-            android:windowSoftInputMode="adjustResize"/>
+            android:parentActivityName=".activities.ActivityUserProfile"
+            android:windowSoftInputMode="adjustResize" />
         
-        <activity android:name=".activities.ActivityUserProfile"
-            android:parentActivityName=".activities.MainActivity"/>
+        <activity
+            android:name=".activities.ActivityUserProfile"
+            android:parentActivityName=".activities.MainActivity" />
         
+        <activity android:name=".activities.ActivityListPhotos"
+            android:parentActivityName=".activities.ActivityUserProfile"/>
     </application>
+
 </manifest>

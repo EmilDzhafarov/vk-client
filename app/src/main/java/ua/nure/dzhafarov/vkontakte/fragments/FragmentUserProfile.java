@@ -17,6 +17,7 @@ import java.util.Locale;
 import de.hdodenhof.circleimageview.CircleImageView;
 import ua.nure.dzhafarov.vkontakte.R;
 import ua.nure.dzhafarov.vkontakte.activities.ActivityChat;
+import ua.nure.dzhafarov.vkontakte.activities.ActivityListPhotos;
 import ua.nure.dzhafarov.vkontakte.models.User;
 
 import static ua.nure.dzhafarov.vkontakte.activities.ActivityUserProfile.REQUEST_USER_PROFILE;
@@ -30,6 +31,7 @@ public class FragmentUserProfile extends Fragment implements View.OnClickListene
     private TextView lastSeen;
     private TextView fullName;
     private Button writeMessageButton;
+    private Button showPhotosButton;
     private ProgressBar progressBar;
     
     @Override
@@ -53,9 +55,11 @@ public class FragmentUserProfile extends Fragment implements View.OnClickListene
         lastSeen = (TextView) view.findViewById(R.id.user_profile_last_seen);
         fullName = (TextView) view.findViewById(R.id.user_full_name);
         writeMessageButton = (Button) view.findViewById(R.id.write_message_button);
+        showPhotosButton = (Button) view.findViewById(R.id.show_photos_button); 
         progressBar = (ProgressBar) view.findViewById(R.id.user_profile_progress_bar);
         
         writeMessageButton.setOnClickListener(this);
+        showPhotosButton.setOnClickListener(this);
     }
     
     private class AsyncUserDownload extends AsyncTask<User, Void, User> {
@@ -108,8 +112,14 @@ public class FragmentUserProfile extends Fragment implements View.OnClickListene
 
     @Override
     public void onClick(View v) {
-        Intent intent = new Intent(getActivity(), ActivityChat.class);
-        intent.putExtra(REQUEST_USER_PROFILE, user);
-        startActivity(intent);
+        if (v.getId() == R.id.write_message_button) {
+            Intent intent = new Intent(getActivity(), ActivityChat.class);
+            intent.putExtra(REQUEST_USER_PROFILE, user);
+            startActivity(intent);   
+        } else if (v.getId() == R.id.show_photos_button) {
+            Intent intent = new Intent(getActivity(), ActivityListPhotos.class);
+            intent.putExtra(REQUEST_USER_PROFILE, user);
+            startActivity(intent); 
+        }
     }
 }

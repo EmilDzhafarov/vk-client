@@ -10,6 +10,7 @@ import java.util.List;
 import ua.nure.dzhafarov.vkontakte.R;
 import ua.nure.dzhafarov.vkontakte.database.MessageLab;
 import ua.nure.dzhafarov.vkontakte.models.Community;
+import ua.nure.dzhafarov.vkontakte.models.Photo;
 import ua.nure.dzhafarov.vkontakte.models.User;
 import ua.nure.dzhafarov.vkontakte.models.LongPoll;
 import ua.nure.dzhafarov.vkontakte.models.Message;
@@ -70,6 +71,22 @@ public class VKManager {
                         try {
                             List<Community> communities = fetcher.getAllCommunities();
                             listener.onSuccess(communities);
+                        } catch (IOException iex) {
+                            listener.onFailure(context.getString(R.string.error_connect_server));
+                        }
+                    }
+                }
+        ).start();
+    }
+    
+    public void loadPhotos(final Integer ownerId, final String size, final OperationListener<List<Photo>> listener) {
+        new Thread(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            List<Photo> photos = fetcher.getAllPhotos(ownerId, size);
+                            listener.onSuccess(photos);
                         } catch (IOException iex) {
                             listener.onFailure(context.getString(R.string.error_connect_server));
                         }

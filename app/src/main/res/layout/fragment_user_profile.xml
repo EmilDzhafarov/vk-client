@@ -54,6 +54,13 @@
             android:layout_height="wrap_content"
             android:text="Write a message"
             android:layout_gravity="center"/>
+
+        <Button
+            android:id="@+id/show_photos_button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Show photos"
+            android:layout_gravity="center"/>
         
     </LinearLayout>
     
