@@ -17,6 +17,7 @@ import java.util.Locale;
 
 import ua.nure.dzhafarov.vkontakte.models.Community;
 import ua.nure.dzhafarov.vkontakte.models.Photo;
+import ua.nure.dzhafarov.vkontakte.models.PhotoAlbum;
 import ua.nure.dzhafarov.vkontakte.models.User;
 import ua.nure.dzhafarov.vkontakte.models.LongPoll;
 import ua.nure.dzhafarov.vkontakte.models.Message;
@@ -96,7 +97,7 @@ class VKFetcher {
                 .appendQueryParameter("access_token", accessToken)
                 .appendQueryParameter("owner_id", ownerId.toString())
                 .appendQueryParameter("lang", "en")
-                .appendQueryParameter("count","36")
+                .appendQueryParameter("count","200")
                 .appendQueryParameter("extended", "1")
                 .appendQueryParameter("photo_sizes", "1")
                 .build();
@@ -116,6 +117,37 @@ class VKFetcher {
         }
 
         return photos;
+    }
+    
+    List<PhotoAlbum> getAllPhotoAlbums(Integer ownerId) throws IOException {
+        List<PhotoAlbum> result = new ArrayList<>();
+
+        Uri photoAlbumsURI = Uri.parse("https://api.vk.com/method/photos.getAlbums")
+                .buildUpon()
+                .appendQueryParameter("v", "5.68")
+                .appendQueryParameter("access_token", accessToken)
+                .appendQueryParameter("owner_id", ownerId.toString())
+                .appendQueryParameter("lang", "en")
+                .appendQueryParameter("need_system", "1")
+                .appendQueryParameter("need_covers", "1")
+                .appendQueryParameter("photo_sizes", "1")
+                .build();
+
+        try {
+            String jsonString = getUrlString(photoAlbumsURI.toString());
+            JSONObject jsonObject = new JSONObject(jsonString).getJSONObject("response");
+            JSONArray jsonArray = jsonObject.getJSONArray("items");
+
+            for (int i = 0; i < jsonArray.length(); i++) {
+                PhotoAlbum album = getPhotoAlbumFromJSON(jsonArray.getJSONObject(i));
+                result.add(album);
+            }
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        
+        return result;
     }
     
     Integer sendMessageToUser(String message, int userId) throws IOException {
@@ -350,6 +382,26 @@ class VKFetcher {
         }
         
         return photo;
+    }
+    
+    private PhotoAlbum getPhotoAlbumFromJSON(JSONObject curr) throws JSONException {
+        PhotoAlbum album = new PhotoAlbum();
+        
+        album.setId(curr.getInt("id"));
+        album.setOwnerId(curr.getInt("owner_id"));
+        album.setTitle(curr.getString("title"));
+        
+        album.setSize(curr.getInt("size"));
+
+        if (curr.has("created")) {
+            album.setCreationTime(curr.getLong("created") * 1000);   
+        }
+        
+        if (curr.has("description")) {
+            album.setDescription(curr.getString("description"));
+        }
+        
+        return album;
     }
     
     private byte[] getUrlBytes(String urlSpec) throws IOException {

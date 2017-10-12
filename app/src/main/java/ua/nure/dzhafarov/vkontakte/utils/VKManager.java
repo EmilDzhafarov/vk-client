@@ -11,6 +11,7 @@ import ua.nure.dzhafarov.vkontakte.R;
 import ua.nure.dzhafarov.vkontakte.database.MessageLab;
 import ua.nure.dzhafarov.vkontakte.models.Community;
 import ua.nure.dzhafarov.vkontakte.models.Photo;
+import ua.nure.dzhafarov.vkontakte.models.PhotoAlbum;
 import ua.nure.dzhafarov.vkontakte.models.User;
 import ua.nure.dzhafarov.vkontakte.models.LongPoll;
 import ua.nure.dzhafarov.vkontakte.models.Message;
@@ -95,6 +96,22 @@ public class VKManager {
         ).start();
     }
 
+    public void loadPhotoAlbums(final Integer ownerId, final OperationListener<List<PhotoAlbum>> listener) {
+        new Thread(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            List<PhotoAlbum> result = fetcher.getAllPhotoAlbums(ownerId);
+                            listener.onSuccess(result);
+                        } catch (IOException iex) {
+                            listener.onFailure(context.getString(R.string.error_connect_server));
+                        }
+                    }
+                }
+        ).start();
+    }
+    
     public void loadMessages(final User user, final Message curr, final ChatLoadListener listener) {
         new Thread(
                 new Runnable() {

@@ -26,15 +26,12 @@
 
         <activity
             android:name=".activities.ActivityChat"
-            android:parentActivityName=".activities.ActivityUserProfile"
             android:windowSoftInputMode="adjustResize" />
         
         <activity
-            android:name=".activities.ActivityUserProfile"
-            android:parentActivityName=".activities.MainActivity" />
+            android:name=".activities.ActivityUserProfile" />
         
-        <activity android:name=".activities.ActivityListPhotos"
-            android:parentActivityName=".activities.ActivityUserProfile"/>
+        <activity android:name=".activities.ActivityListPhotos" />
     </application>
 
 </manifest>

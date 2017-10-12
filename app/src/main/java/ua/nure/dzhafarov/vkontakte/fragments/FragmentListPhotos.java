@@ -18,6 +18,7 @@ import java.util.Locale;
 import ua.nure.dzhafarov.vkontakte.R;
 import ua.nure.dzhafarov.vkontakte.adapters.PhotoAdapter;
 import ua.nure.dzhafarov.vkontakte.models.Photo;
+import ua.nure.dzhafarov.vkontakte.models.PhotoAlbum;
 import ua.nure.dzhafarov.vkontakte.models.User;
 import ua.nure.dzhafarov.vkontakte.utils.OnUserClickListener;
 import ua.nure.dzhafarov.vkontakte.utils.OperationListener;
@@ -75,10 +76,11 @@ public class FragmentListPhotos extends Fragment {
         
         getActivity().setTitle(String.format(Locale.ROOT, "%s's photos", owner.getFirstName()));
         loadPhotos(owner);
+        loadPhotoAlbums(owner);
     }
     
     private void loadPhotos(User owner) {
-       swipeRefreshLayout.setRefreshing(true);
+        swipeRefreshLayout.setRefreshing(true);
         vkManager.loadPhotos(owner.getId(), "q", new OperationListener<List<Photo>>() {
             @Override
             public void onSuccess(final List<Photo> object) {
@@ -88,6 +90,19 @@ public class FragmentListPhotos extends Fragment {
             @Override
             public void onFailure(String message) {
                 showErrorInUI(message);
+            }
+        });
+    }
+    
+    private void loadPhotoAlbums(User owner) {
+        vkManager.loadPhotoAlbums(owner.getId(), new OperationListener<List<PhotoAlbum>>() {
+            @Override
+            public void onSuccess(List<PhotoAlbum> object) {
+            }
+
+            @Override
+            public void onFailure(String message) {
+
             }
         });
     }
