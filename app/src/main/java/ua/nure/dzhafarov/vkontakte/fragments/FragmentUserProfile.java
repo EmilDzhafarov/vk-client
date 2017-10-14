@@ -4,6 +4,9 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
+import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,7 +20,8 @@ import java.util.Locale;
 import de.hdodenhof.circleimageview.CircleImageView;
 import ua.nure.dzhafarov.vkontakte.R;
 import ua.nure.dzhafarov.vkontakte.activities.ActivityChat;
-import ua.nure.dzhafarov.vkontakte.activities.ActivityListPhotos;
+import ua.nure.dzhafarov.vkontakte.activities.ActivityListPhotoAlbums;
+import ua.nure.dzhafarov.vkontakte.activities.SingleFragmentActivity;
 import ua.nure.dzhafarov.vkontakte.models.User;
 
 import static ua.nure.dzhafarov.vkontakte.activities.ActivityUserProfile.REQUEST_USER_PROFILE;
@@ -109,7 +113,7 @@ public class FragmentUserProfile extends Fragment implements View.OnClickListene
             linearLayoutDetails.setVisibility(View.VISIBLE);
         }
     }
-
+    
     @Override
     public void onClick(View v) {
         if (v.getId() == R.id.write_message_button) {
@@ -117,9 +121,8 @@ public class FragmentUserProfile extends Fragment implements View.OnClickListene
             intent.putExtra(REQUEST_USER_PROFILE, user);
             startActivity(intent);   
         } else if (v.getId() == R.id.show_photos_button) {
-            Intent intent = new Intent(getActivity(), ActivityListPhotos.class);
-            intent.putExtra(REQUEST_USER_PROFILE, user);
-            startActivity(intent); 
+            FragmentListPhotoAlbums albums = FragmentListPhotoAlbums.newInstance(user);
+            SingleFragmentActivity.addFragmentToActivity(albums, getActivity(), R.id.fragment_host);
         }
     }
 }

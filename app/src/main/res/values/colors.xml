@@ -9,4 +9,5 @@
     <color name="text_color_get">#607D8B</color>
     <color name="text_color_send">#1B5E20</color>
     <color name="new_message">#E0F7FA</color>
+    <color name="black">#99000000</color>
 </resources>

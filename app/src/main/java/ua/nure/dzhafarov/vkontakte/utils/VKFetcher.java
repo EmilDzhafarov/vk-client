@@ -88,16 +88,17 @@ class VKFetcher {
         return communities;
     }
 
-    List<Photo> getAllPhotos(Integer ownerId, String size) throws IOException {
+    List<Photo> getAllPhotosFromAlbum(Integer ownerId, String size, String albumId) throws IOException {
         List<Photo> photos = new ArrayList<>();
 
-        Uri photosURI = Uri.parse("https://api.vk.com/method/photos.getAll")
+        Uri photosURI = Uri.parse("https://api.vk.com/method/photos.get")
                 .buildUpon()
                 .appendQueryParameter("v", "5.68")
                 .appendQueryParameter("access_token", accessToken)
                 .appendQueryParameter("owner_id", ownerId.toString())
+                .appendQueryParameter("album_id", albumId)
                 .appendQueryParameter("lang", "en")
-                .appendQueryParameter("count","200")
+                .appendQueryParameter("count","1000")
                 .appendQueryParameter("extended", "1")
                 .appendQueryParameter("photo_sizes", "1")
                 .build();
@@ -130,7 +131,6 @@ class VKFetcher {
                 .appendQueryParameter("lang", "en")
                 .appendQueryParameter("need_system", "1")
                 .appendQueryParameter("need_covers", "1")
-                .appendQueryParameter("photo_sizes", "1")
                 .build();
 
         try {
@@ -191,7 +191,8 @@ class VKFetcher {
 
             longPoll.setKey(obj.getString("key"));
             longPoll.setServer(obj.getString("server"));
-            longPoll.setTs(obj.getLong("ts"));   
+            longPoll.setTs(obj.getLong("ts"));
+            
         } catch (JSONException ex) {
             ex.printStackTrace();
         }
@@ -400,6 +401,10 @@ class VKFetcher {
         if (curr.has("description")) {
             album.setDescription(curr.getString("description"));
         }
+        
+        if (curr.has("thumb_src")) {
+            album.setThumbSrc(curr.getString("thumb_src"));
+        } 
         
         return album;
     }

@@ -1,5 +1,6 @@
 package ua.nure.dzhafarov.vkontakte.activities;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -16,19 +17,8 @@ public abstract class SingleFragmentActivity extends AppCompatActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.fragment_host);
-        
-        FragmentManager fm = getSupportFragmentManager();
-        Fragment fragment = fm.findFragmentById(R.id.fragment_host);
 
-        if (fragment == null) {
-            fragment = createFragment();
-            fm.beginTransaction().add(R.id.fragment_host, fragment).commit();
-        } else {
-            FragmentTransaction fragmentTransaction = fm.beginTransaction();
-            fragmentTransaction.replace(R.id.fragment_host, fragment);
-            fragmentTransaction.addToBackStack(null);
-            fragmentTransaction.commit();
-        }
+        addFragmentToActivity(createFragment(), this, R.id.fragment_host);
     }
 
     @Override
@@ -44,5 +34,15 @@ public abstract class SingleFragmentActivity extends AppCompatActivity {
                 super.onBackPressed();
             }
         }
+    }
+
+    public static void addFragmentToActivity(Fragment fr, Activity activity, Integer hostId) {
+        FragmentManager fm = ((AppCompatActivity) activity).getSupportFragmentManager();
+        
+        FragmentTransaction fragmentTransaction = fm.beginTransaction();
+        fragmentTransaction.replace(hostId, fr);
+        fragmentTransaction.addToBackStack(null);
+        fragmentTransaction.commit();
+
     }
 }

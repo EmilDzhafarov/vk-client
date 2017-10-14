@@ -2,7 +2,6 @@ package ua.nure.dzhafarov.vkontakte.activities;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
@@ -29,7 +28,7 @@ import com.squareup.picasso.Picasso;
 import de.hdodenhof.circleimageview.CircleImageView;
 import ua.nure.dzhafarov.vkontakte.R;
 import ua.nure.dzhafarov.vkontakte.fragments.FragmentListCommunities;
-import ua.nure.dzhafarov.vkontakte.fragments.FragmentListPhotos;
+import ua.nure.dzhafarov.vkontakte.fragments.FragmentListPhotoAlbums;
 import ua.nure.dzhafarov.vkontakte.fragments.FragmentListUsers;
 import ua.nure.dzhafarov.vkontakte.models.User;
 import ua.nure.dzhafarov.vkontakte.services.UpdateService;
@@ -143,9 +142,14 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_communities) {
-            addFragment(new FragmentListCommunities());
+            SingleFragmentActivity.addFragmentToActivity(new FragmentListCommunities(), this, R.id.fragment_host);
         } else if (id == R.id.nav_photos) {
-            addFragment(new FragmentListPhotos());
+            User user = VKManager.getInstance().getCurrentUser();
+            
+            if (user != null) {
+                SingleFragmentActivity.addFragmentToActivity(
+                        FragmentListPhotoAlbums.newInstance(user), this, R.id.fragment_host);   
+            }
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -212,21 +216,6 @@ public class MainActivity extends AppCompatActivity
         }
     }
     
-    private void addFragment(Fragment fr) {
-        FragmentManager fm = getSupportFragmentManager();
-        Fragment fragment = fm.findFragmentById(R.id.fragment_host);
-
-        if (fragment == null) {
-            fragment = fr;
-            fm.beginTransaction().add(R.id.fragment_host, fragment).commit();
-        } else {
-            FragmentTransaction fragmentTransaction = fm.beginTransaction();
-            fragmentTransaction.replace(R.id.fragment_host, fr);
-            fragmentTransaction.addToBackStack(null);
-            fragmentTransaction.commit();
-        }
-    }
-    
     private void loadCurrentUserInUI(final User currUser) {
         if (currUser != null) {
             runOnUiThread(
@@ -248,7 +237,7 @@ public class MainActivity extends AppCompatActivity
         initializeCurrentUser();
         Intent serviceIntent = new Intent(MainActivity.this, UpdateService.class);
         startService(serviceIntent);
-        addFragment(new FragmentListUsers());
+        SingleFragmentActivity.addFragmentToActivity(new FragmentListUsers(), this, R.id.fragment_host);
     }
 
     private void saveAccessToken(String accessToken) {
@@ -274,5 +263,4 @@ public class MainActivity extends AppCompatActivity
         SharedPreferences prefs = getPreferences(MODE_PRIVATE);
         return prefs.getLong(EXPIRES_TIME, EMPTY_EXPIRES_TIME);
     }
-    
 }

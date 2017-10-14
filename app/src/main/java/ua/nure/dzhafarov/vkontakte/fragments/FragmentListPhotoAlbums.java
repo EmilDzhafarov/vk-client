@@ -2,10 +2,9 @@ package ua.nure.dzhafarov.vkontakte.fragments;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,8 +16,8 @@ import java.util.List;
 import java.util.Locale;
 
 import ua.nure.dzhafarov.vkontakte.R;
-import ua.nure.dzhafarov.vkontakte.adapters.PhotoAdapter;
-import ua.nure.dzhafarov.vkontakte.models.Photo;
+import ua.nure.dzhafarov.vkontakte.activities.SingleFragmentActivity;
+import ua.nure.dzhafarov.vkontakte.adapters.PhotoAlbumAdapter;
 import ua.nure.dzhafarov.vkontakte.models.PhotoAlbum;
 import ua.nure.dzhafarov.vkontakte.models.User;
 import ua.nure.dzhafarov.vkontakte.utils.OnUserClickListener;
@@ -27,25 +26,20 @@ import ua.nure.dzhafarov.vkontakte.utils.VKManager;
 
 import static ua.nure.dzhafarov.vkontakte.activities.ActivityUserProfile.REQUEST_USER_PROFILE;
 
-public class FragmentListPhotos extends Fragment {
-    
-    public static final String REQUEST_PHOTO_LIST = "request_photo_list";
-    
-    private List<Photo> photos;
-    private PhotoAdapter photoAdapter;
+public class FragmentListPhotoAlbums extends Fragment {
+
+    private List<PhotoAlbum> photoAlbums;
+    private PhotoAlbumAdapter photoAlbumAdapter;
     private VKManager vkManager;
     private User owner;
-    private PhotoAlbum photoAlbum;
 
     private RecyclerView recyclerView;
     private SwipeRefreshLayout swipeRefreshLayout;
 
-    public static FragmentListPhotos newInstance(User owner, PhotoAlbum photoAlbum) {
+    public static FragmentListPhotoAlbums newInstance(User owner) {
         Bundle args = new Bundle();
         args.putSerializable(REQUEST_USER_PROFILE, owner);
-        args.putSerializable(REQUEST_PHOTO_LIST, photoAlbum);
-        
-        FragmentListPhotos result = new FragmentListPhotos();
+        FragmentListPhotoAlbums result = new FragmentListPhotoAlbums();
         result.setArguments(args);
         return result;
     }
@@ -54,7 +48,6 @@ public class FragmentListPhotos extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         owner = (User) getArguments().getSerializable(REQUEST_USER_PROFILE);
-        photoAlbum = (PhotoAlbum) getArguments().getSerializable(REQUEST_PHOTO_LIST);
     }
 
     @Override
@@ -66,49 +59,37 @@ public class FragmentListPhotos extends Fragment {
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        photos = new ArrayList<>();
+        photoAlbums = new ArrayList<>();
         recyclerView = (RecyclerView) view.findViewById(R.id.recycler_view_photos);
         swipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.refresh_layout);
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                loadPhotos(owner, "q");
+                loadPhotoAlbums();
             }
         });
         swipeRefreshLayout.setColorSchemeColors(getActivity().getColor(R.color.colorPrimary));
-        recyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 3));
-        photoAdapter = new PhotoAdapter(photos, getActivity(), new OnUserClickListener<Photo>() {
+        recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+        photoAlbumAdapter = new PhotoAlbumAdapter(photoAlbums, getActivity(), new OnUserClickListener<PhotoAlbum>() {
             @Override
-            public void onUserClicked(Photo result, View view) {
-                // skip this yet
+            public void onUserClicked(PhotoAlbum result, View view) {
+                startLoadingPhotos(result);
             }
         });
 
-        recyclerView.setAdapter(photoAdapter);
+        recyclerView.setAdapter(photoAlbumAdapter);
         vkManager = VKManager.getInstance();
-        
-        getActivity().setTitle(String.format(Locale.ROOT, "%s", photoAlbum.getTitle()));
-        loadPhotos(owner, "q");
+
+
+        getActivity().setTitle(String.format(Locale.ROOT, "%s's photo albums", owner.getFirstName()));
+        loadPhotoAlbums();
     }
 
-    private void loadPhotos(User owner, String size) {
+    private void loadPhotoAlbums() {
         swipeRefreshLayout.setRefreshing(true);
-        
-        String albumId;
-        
-        if (photoAlbum.getId() == -6) {
-            albumId = "profile";    
-        } else if (photoAlbum.getId() == -7) {
-            albumId = "wall";
-        } else if (photoAlbum.getId() == -15) {
-            albumId = "saved";
-        } else {
-            albumId = String.valueOf(photoAlbum.getId());
-        }
-        
-        vkManager.loadPhotosFromAlbum(owner.getId(), size, albumId, new OperationListener<List<Photo>>() {
+        vkManager.loadPhotoAlbums(owner.getId(), new OperationListener<List<PhotoAlbum>>() {
             @Override
-            public void onSuccess(List<Photo> object) {
+            public void onSuccess(List<PhotoAlbum> object) {
                 loadPhotosAlbumsInUI(object);
             }
 
@@ -119,7 +100,7 @@ public class FragmentListPhotos extends Fragment {
         });
     }
 
-    private void loadPhotosAlbumsInUI(final List<Photo> phs) {
+    private void loadPhotosAlbumsInUI(final List<PhotoAlbum> phs) {
         Activity activity = getActivity();
 
         if (activity != null) {
@@ -127,9 +108,9 @@ public class FragmentListPhotos extends Fragment {
                     new Runnable() {
                         @Override
                         public void run() {
-                            photos.clear();
-                            photos.addAll(phs);
-                            photoAdapter.notifyDataSetChanged();
+                            photoAlbums.clear();
+                            photoAlbums.addAll(phs);
+                            photoAlbumAdapter.notifyDataSetChanged();
                             swipeRefreshLayout.setRefreshing(false);
                         }
                     }
@@ -150,5 +131,10 @@ public class FragmentListPhotos extends Fragment {
                     }
             );
         }
+    }
+
+    private void startLoadingPhotos(PhotoAlbum album) {
+        FragmentListPhotos listPhotos = FragmentListPhotos.newInstance(owner, album);
+        SingleFragmentActivity.addFragmentToActivity(listPhotos, getActivity(), R.id.fragment_host);
     }
 }

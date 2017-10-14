@@ -80,13 +80,13 @@ public class VKManager {
         ).start();
     }
     
-    public void loadPhotos(final Integer ownerId, final String size, final OperationListener<List<Photo>> listener) {
+    public void loadPhotosFromAlbum(final Integer ownerId, final String size, final String titleAlbum, final OperationListener<List<Photo>> listener) {
         new Thread(
                 new Runnable() {
                     @Override
                     public void run() {
                         try {
-                            List<Photo> photos = fetcher.getAllPhotos(ownerId, size);
+                            List<Photo> photos = fetcher.getAllPhotosFromAlbum(ownerId, size, titleAlbum);
                             listener.onSuccess(photos);
                         } catch (IOException iex) {
                             listener.onFailure(context.getString(R.string.error_connect_server));

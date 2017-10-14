@@ -9,6 +9,7 @@ public class PhotoAlbum implements Serializable{
     private String title;
     private String description;
     private long creationTime;
+    private String thumbSrc;
     private int size;
 
     public int getId() {
@@ -57,5 +58,13 @@ public class PhotoAlbum implements Serializable{
 
     public void setSize(int size) {
         this.size = size;
+    }
+
+    public String getThumbSrc() {
+        return thumbSrc;
+    }
+
+    public void setThumbSrc(String thumbSrc) {
+        this.thumbSrc = thumbSrc;
     }
 }
