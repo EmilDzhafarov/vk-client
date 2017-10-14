@@ -31,6 +31,8 @@
         <activity
             android:name=".activities.ActivityUserProfile" />
 
+        <activity android:name=".activities.ActivityPhotoPager"
+            android:theme="@style/AppTheme.NoActionBar"/>
     </application>
 
 </manifest>

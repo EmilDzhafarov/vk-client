@@ -1,10 +1,9 @@
 package ua.nure.dzhafarov.vkontakte.fragments;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -18,6 +17,7 @@ import java.util.List;
 import java.util.Locale;
 
 import ua.nure.dzhafarov.vkontakte.R;
+import ua.nure.dzhafarov.vkontakte.activities.ActivityPhotoPager;
 import ua.nure.dzhafarov.vkontakte.adapters.PhotoAdapter;
 import ua.nure.dzhafarov.vkontakte.models.Photo;
 import ua.nure.dzhafarov.vkontakte.models.PhotoAlbum;
@@ -74,7 +74,9 @@ public class FragmentListPhotos extends Fragment {
         photoAdapter = new PhotoAdapter(photos, getActivity(), new OnUserClickListener<Photo>() {
             @Override
             public void onUserClicked(Photo result, View view) {
-                // skip this yet
+                Intent intent = ActivityPhotoPager.newIntent(getActivity(), 
+                        (ArrayList<Photo>) photos, result.getId());
+                startActivity(intent);
             }
         });
 
@@ -82,12 +84,12 @@ public class FragmentListPhotos extends Fragment {
         vkManager = VKManager.getInstance();
         
         getActivity().setTitle(String.format(Locale.ROOT, "%s", photoAlbum.getTitle()));
-        loadPhotos(owner, "q");
+        loadPhotos(owner);
     }
 
-    private void loadPhotos(User owner, String size) {
+    private void loadPhotos(User owner) {
         progressBar.setVisibility(View.VISIBLE);
-        vkManager.loadPhotosFromAlbum(owner.getId(), size, photoAlbum.getId(), new OperationListener<List<Photo>>() {
+        vkManager.loadPhotosFromAlbum(owner.getId(), photoAlbum.getId(), new OperationListener<List<Photo>>() {
             @Override
             public void onSuccess(List<Photo> object) {
                 loadPhotosAlbumsInUI(object);

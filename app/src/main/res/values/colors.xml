@@ -10,4 +10,5 @@
     <color name="text_color_send">#1B5E20</color>
     <color name="new_message">#E0F7FA</color>
     <color name="black">#99000000</color>
+    <color name="dark_black">#000</color>
 </resources>

@@ -88,7 +88,7 @@ class VKFetcher {
         return communities;
     }
 
-    List<Photo> getAllPhotosFromAlbum(Integer ownerId, String size, Integer id) throws IOException {
+    List<Photo> getAllPhotosFromAlbum(Integer ownerId, Integer id) throws IOException {
         List<Photo> photos = new ArrayList<>();
 
         String albumId;
@@ -122,7 +122,7 @@ class VKFetcher {
             JSONArray jsonArray = jsonObject.getJSONArray("items");
 
             for (int i = 0; i < jsonArray.length(); i++) {
-                Photo photo = getPhotoFromJSON(jsonArray.getJSONObject(i), size);
+                Photo photo = getPhotoFromJSON(jsonArray.getJSONObject(i));
                 photos.add(photo);
             }
 
@@ -379,7 +379,7 @@ class VKFetcher {
         return community;
     }
 
-    private Photo getPhotoFromJSON(JSONObject curr, String size) throws JSONException {
+    private Photo getPhotoFromJSON(JSONObject curr) throws JSONException {
         Photo photo = new Photo();
         
         photo.setId(curr.getInt("id"));
@@ -387,14 +387,8 @@ class VKFetcher {
         
         JSONArray sizes = curr.getJSONArray("sizes");
         
-        for (int i = 0; i < sizes.length(); i++) {
-            JSONObject obj = sizes.getJSONObject(i);
-            
-            if (size.equals(obj.getString("type"))) {
-                photo.setPhotoURL(obj.getString("src"));
-                break;
-            }
-        }
+        JSONObject obj = sizes.getJSONObject(sizes.length() - 1);
+        photo.setPhotoURL(obj.getString("src"));
         
         return photo;
     }
