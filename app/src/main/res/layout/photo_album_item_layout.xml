@@ -1,30 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/relativelayout"
+    android:id="@+id/relative_layout"
     android:layout_width="match_parent"
-    android:layout_height="200dp"
-    android:layout_margin="4dp">
+    android:layout_height="240dp"
+    android:layout_marginTop="2dp"
+    android:layout_marginBottom="2dp">
 
     <ImageView
         android:id="@+id/image_view_cover_photo_album"
         android:layout_width="match_parent"
-        android:layout_height="200dp" />
+        android:layout_height="match_parent" />
 
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:visibility="gone"
+        style="@android:style/Widget.ProgressBar.Small"/>
+    
     <LinearLayout
         android:id="@+id/linear_layout_count_of_photos"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@color/black"
-        android:padding="4dp"
+        android:padding="6dp"
         android:layout_alignTop="@id/image_view_cover_photo_album"
         android:layout_alignEnd="@id/image_view_cover_photo_album"
         android:orientation="horizontal">
         
         <ImageView
-            android:layout_width="16dp"
-            android:layout_height="15dp"
-            android:src="@drawable/camera"/>
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/camera"
+            android:layout_gravity="center_vertical"/>
         
         <TextView
             android:id="@+id/text_view_count_of_photo"
@@ -32,7 +42,7 @@
             android:layout_height="wrap_content"
             android:textColor="#FFFFFF"
             android:gravity="center_vertical"
-            android:text="1000"/>
+            android:layout_marginStart="8dp"/>
         
     </LinearLayout>
     
@@ -42,8 +52,8 @@
         android:layout_height="wrap_content"
         android:background="@color/black"
         android:gravity="center"
+        android:padding="4dp"
         android:layout_alignBottom="@id/image_view_cover_photo_album"
-        android:text="Hello"
         android:textColor="#FFFFFF" />
 
 </RelativeLayout>

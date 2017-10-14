@@ -30,8 +30,7 @@
         
         <activity
             android:name=".activities.ActivityUserProfile" />
-        
-        <activity android:name=".activities.ActivityListPhotoAlbums" />
+
     </application>
 
 </manifest>

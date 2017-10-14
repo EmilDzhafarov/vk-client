@@ -88,9 +88,21 @@ class VKFetcher {
         return communities;
     }
 
-    List<Photo> getAllPhotosFromAlbum(Integer ownerId, String size, String albumId) throws IOException {
+    List<Photo> getAllPhotosFromAlbum(Integer ownerId, String size, Integer id) throws IOException {
         List<Photo> photos = new ArrayList<>();
 
+        String albumId;
+
+        if (id == -6) {
+            albumId = "profile";
+        } else if (id == -7) {
+            albumId = "wall";
+        } else if (id == -15) {
+            albumId = "saved";
+        } else {
+            albumId = String.valueOf(id);
+        }
+        
         Uri photosURI = Uri.parse("https://api.vk.com/method/photos.get")
                 .buildUpon()
                 .appendQueryParameter("v", "5.68")
@@ -99,6 +111,7 @@ class VKFetcher {
                 .appendQueryParameter("album_id", albumId)
                 .appendQueryParameter("lang", "en")
                 .appendQueryParameter("count","1000")
+                .appendQueryParameter("rev", "1")
                 .appendQueryParameter("extended", "1")
                 .appendQueryParameter("photo_sizes", "1")
                 .build();
@@ -131,6 +144,7 @@ class VKFetcher {
                 .appendQueryParameter("lang", "en")
                 .appendQueryParameter("need_system", "1")
                 .appendQueryParameter("need_covers", "1")
+                .appendQueryParameter("photo_sizes", "1")
                 .build();
 
         try {
@@ -391,7 +405,6 @@ class VKFetcher {
         album.setId(curr.getInt("id"));
         album.setOwnerId(curr.getInt("owner_id"));
         album.setTitle(curr.getString("title"));
-        
         album.setSize(curr.getInt("size"));
 
         if (curr.has("created")) {
@@ -402,9 +415,11 @@ class VKFetcher {
             album.setDescription(curr.getString("description"));
         }
         
-        if (curr.has("thumb_src")) {
-            album.setThumbSrc(curr.getString("thumb_src"));
-        } 
+        if (curr.has("sizes")) {
+            JSONArray photoSizes = curr.getJSONArray("sizes");
+            JSONObject phSize = photoSizes.getJSONObject(photoSizes.length() - 1);
+            album.setThumbSrc(phSize.getString("src"));
+        }
         
         return album;
     }

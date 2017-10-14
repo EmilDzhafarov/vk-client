@@ -20,6 +20,7 @@ import android.view.View;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -84,7 +85,7 @@ public class MainActivity extends AppCompatActivity
         webView = (WebView) findViewById(R.id.authorize_web_view);
         webView.setWebViewClient(webViewClient);
         linearLayoutLoading = (LinearLayout) findViewById(R.id.linear_layout_loading);
-
+        
         View header = navigationView.getHeaderView(0);
         fullName = (TextView) header.findViewById(R.id.header_user_full_name);
         isOnline = (TextView) header.findViewById(R.id.header_user_is_online);
@@ -232,6 +233,7 @@ public class MainActivity extends AppCompatActivity
     }
     
     private void startSession() {
+        linearLayoutLoading.setVisibility(View.GONE);
         final VKManager vkManager = VKManager.getInstance();
         vkManager.initialize(this, getAccessToken());
         initializeCurrentUser();

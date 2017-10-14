@@ -9,6 +9,8 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -34,7 +36,8 @@ public class FragmentListPhotoAlbums extends Fragment {
     private User owner;
 
     private RecyclerView recyclerView;
-    private SwipeRefreshLayout swipeRefreshLayout;
+    private ProgressBar progressBar;
+    private TextView titleIfEmptyTextView;
 
     public static FragmentListPhotoAlbums newInstance(User owner) {
         Bundle args = new Bundle();
@@ -61,14 +64,9 @@ public class FragmentListPhotoAlbums extends Fragment {
 
         photoAlbums = new ArrayList<>();
         recyclerView = (RecyclerView) view.findViewById(R.id.recycler_view_photos);
-        swipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.refresh_layout);
-        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                loadPhotoAlbums();
-            }
-        });
-        swipeRefreshLayout.setColorSchemeColors(getActivity().getColor(R.color.colorPrimary));
+        progressBar = (ProgressBar) view.findViewById(R.id.progress_bar);
+        titleIfEmptyTextView = (TextView) view.findViewById(R.id.title_if_empty);
+        
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
         photoAlbumAdapter = new PhotoAlbumAdapter(photoAlbums, getActivity(), new OnUserClickListener<PhotoAlbum>() {
             @Override
@@ -80,13 +78,12 @@ public class FragmentListPhotoAlbums extends Fragment {
         recyclerView.setAdapter(photoAlbumAdapter);
         vkManager = VKManager.getInstance();
 
-
         getActivity().setTitle(String.format(Locale.ROOT, "%s's photo albums", owner.getFirstName()));
         loadPhotoAlbums();
     }
 
     private void loadPhotoAlbums() {
-        swipeRefreshLayout.setRefreshing(true);
+        progressBar.setVisibility(View.VISIBLE);
         vkManager.loadPhotoAlbums(owner.getId(), new OperationListener<List<PhotoAlbum>>() {
             @Override
             public void onSuccess(List<PhotoAlbum> object) {
@@ -109,9 +106,16 @@ public class FragmentListPhotoAlbums extends Fragment {
                         @Override
                         public void run() {
                             photoAlbums.clear();
-                            photoAlbums.addAll(phs);
+                            
+                            for (PhotoAlbum album : phs) {
+                                if (album.getSize() > 0) {
+                                    photoAlbums.add(album);
+                                }
+                            }
+                            
                             photoAlbumAdapter.notifyDataSetChanged();
-                            swipeRefreshLayout.setRefreshing(false);
+                            progressBar.setVisibility(View.GONE);
+                            checkOnEmpty();
                         }
                     }
             );
@@ -126,6 +130,7 @@ public class FragmentListPhotoAlbums extends Fragment {
                     new Runnable() {
                         @Override
                         public void run() {
+                            progressBar.setVisibility(View.GONE);
                             Toast.makeText(activity, message, Toast.LENGTH_SHORT).show();
                         }
                     }
@@ -136,5 +141,15 @@ public class FragmentListPhotoAlbums extends Fragment {
     private void startLoadingPhotos(PhotoAlbum album) {
         FragmentListPhotos listPhotos = FragmentListPhotos.newInstance(owner, album);
         SingleFragmentActivity.addFragmentToActivity(listPhotos, getActivity(), R.id.fragment_host);
+    }
+    
+    private void checkOnEmpty() {
+        if (photoAlbums.size() == 0) {
+            titleIfEmptyTextView.setVisibility(View.VISIBLE);
+            recyclerView.setVisibility(View.GONE);
+        } else {
+            recyclerView.setVisibility(View.VISIBLE);
+            titleIfEmptyTextView.setVisibility(View.GONE);
+        }
     }
 }

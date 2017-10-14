@@ -10,6 +10,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import java.util.ArrayList;
@@ -38,7 +39,7 @@ public class FragmentListPhotos extends Fragment {
     private PhotoAlbum photoAlbum;
 
     private RecyclerView recyclerView;
-    private SwipeRefreshLayout swipeRefreshLayout;
+    private ProgressBar progressBar;
 
     public static FragmentListPhotos newInstance(User owner, PhotoAlbum photoAlbum) {
         Bundle args = new Bundle();
@@ -68,14 +69,7 @@ public class FragmentListPhotos extends Fragment {
 
         photos = new ArrayList<>();
         recyclerView = (RecyclerView) view.findViewById(R.id.recycler_view_photos);
-        swipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.refresh_layout);
-        swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                loadPhotos(owner, "q");
-            }
-        });
-        swipeRefreshLayout.setColorSchemeColors(getActivity().getColor(R.color.colorPrimary));
+        progressBar = (ProgressBar) view.findViewById(R.id.progress_bar); 
         recyclerView.setLayoutManager(new GridLayoutManager(getActivity(), 3));
         photoAdapter = new PhotoAdapter(photos, getActivity(), new OnUserClickListener<Photo>() {
             @Override
@@ -92,21 +86,8 @@ public class FragmentListPhotos extends Fragment {
     }
 
     private void loadPhotos(User owner, String size) {
-        swipeRefreshLayout.setRefreshing(true);
-        
-        String albumId;
-        
-        if (photoAlbum.getId() == -6) {
-            albumId = "profile";    
-        } else if (photoAlbum.getId() == -7) {
-            albumId = "wall";
-        } else if (photoAlbum.getId() == -15) {
-            albumId = "saved";
-        } else {
-            albumId = String.valueOf(photoAlbum.getId());
-        }
-        
-        vkManager.loadPhotosFromAlbum(owner.getId(), size, albumId, new OperationListener<List<Photo>>() {
+        progressBar.setVisibility(View.VISIBLE);
+        vkManager.loadPhotosFromAlbum(owner.getId(), size, photoAlbum.getId(), new OperationListener<List<Photo>>() {
             @Override
             public void onSuccess(List<Photo> object) {
                 loadPhotosAlbumsInUI(object);
@@ -130,7 +111,7 @@ public class FragmentListPhotos extends Fragment {
                             photos.clear();
                             photos.addAll(phs);
                             photoAdapter.notifyDataSetChanged();
-                            swipeRefreshLayout.setRefreshing(false);
+                            progressBar.setVisibility(View.GONE);
                         }
                     }
             );
@@ -145,6 +126,7 @@ public class FragmentListPhotos extends Fragment {
                     new Runnable() {
                         @Override
                         public void run() {
+                            progressBar.setVisibility(View.GONE);
                             Toast.makeText(activity, message, Toast.LENGTH_SHORT).show();
                         }
                     }
