@@ -17,8 +17,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
+import android.webkit.WebResourceError;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -36,8 +39,8 @@ import ua.nure.dzhafarov.vkontakte.services.UpdateService;
 import ua.nure.dzhafarov.vkontakte.utils.OperationListener;
 import ua.nure.dzhafarov.vkontakte.utils.VKManager;
 
-public class MainActivity extends AppCompatActivity 
-        implements NavigationView.OnNavigationItemSelectedListener{
+public class MainActivity extends AppCompatActivity
+        implements NavigationView.OnNavigationItemSelectedListener {
 
     private static final String ACCESS_TOKEN = "access_token";
     private static final String EMPTY_ACCESS_TOKEN = "empty_access_token";
@@ -57,7 +60,9 @@ public class MainActivity extends AppCompatActivity
 
     private WebView webView;
     private LinearLayout linearLayoutLoading;
-
+    private Button tryAgainButton;
+    private DrawerLayout drawer;
+    
     private TextView fullName;
     private TextView isOnline;
     private CircleImageView photo;
@@ -70,34 +75,47 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
                 this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
         drawer.setDrawerListener(toggle);
+        drawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
         toggle.syncState();
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
-        
+
         String token = getAccessToken();
         long time = getExpiresTime();
 
         webView = (WebView) findViewById(R.id.authorize_web_view);
         webView.setWebViewClient(webViewClient);
         linearLayoutLoading = (LinearLayout) findViewById(R.id.linear_layout_loading);
-        
+        tryAgainButton = (Button) findViewById(R.id.try_again_button);
+        tryAgainButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                connectToVK();
+            }
+        });
+
         View header = navigationView.getHeaderView(0);
         fullName = (TextView) header.findViewById(R.id.header_user_full_name);
         isOnline = (TextView) header.findViewById(R.id.header_user_is_online);
         photo = (CircleImageView) header.findViewById(R.id.header_user_photo);
-        
+
         if (token.equals(EMPTY_ACCESS_TOKEN) || System.currentTimeMillis() > time) {
-            webView.setVisibility(View.GONE);
-            linearLayoutLoading.setVisibility(View.VISIBLE);
-            webView.loadUrl(authorizeUrl);
+            connectToVK();
         } else {
             startSession();
         }
+    }
+
+    private void connectToVK() {
+        webView.setVisibility(View.GONE);
+        linearLayoutLoading.setVisibility(View.VISIBLE);
+        tryAgainButton.setVisibility(View.GONE);
+        webView.loadUrl(authorizeUrl);
     }
 
     @Override
@@ -119,7 +137,7 @@ public class MainActivity extends AppCompatActivity
             }
         }
     }
-    
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.initial, menu);
@@ -146,10 +164,10 @@ public class MainActivity extends AppCompatActivity
             SingleFragmentActivity.addFragmentToActivity(new FragmentListCommunities(), this, R.id.fragment_host);
         } else if (id == R.id.nav_photos) {
             User user = VKManager.getInstance().getCurrentUser();
-            
+
             if (user != null) {
                 SingleFragmentActivity.addFragmentToActivity(
-                        FragmentListPhotoAlbums.newInstance(user), this, R.id.fragment_host);   
+                        FragmentListPhotoAlbums.newInstance(user), this, R.id.fragment_host);
             }
         }
 
@@ -157,9 +175,17 @@ public class MainActivity extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
-    
+
     private WebViewClient webViewClient = new WebViewClient() {
-        
+
+        @Override
+        public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+            webView.destroy();
+            linearLayoutLoading.setVisibility(View.GONE);
+            tryAgainButton.setVisibility(View.VISIBLE);
+            Toast.makeText(MainActivity.this, getString(R.string.error_connect_server), Toast.LENGTH_LONG).show();
+        }
+
         @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
@@ -189,7 +215,7 @@ public class MainActivity extends AppCompatActivity
                 startSession();
             } else {
                 linearLayoutLoading.setVisibility(View.GONE);
-                webView.setVisibility(View.VISIBLE);   
+                webView.setVisibility(View.VISIBLE);
             }
         }
     };
@@ -200,6 +226,14 @@ public class MainActivity extends AppCompatActivity
                 @Override
                 public void onSuccess(User object) {
                     loadCurrentUserInUI(object);
+                    MainActivity.this.runOnUiThread(
+                            new Runnable() {
+                                @Override
+                                public void run() {
+                                    drawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);              
+                                }
+                            }
+                    );
                 }
 
                 @Override
@@ -216,7 +250,7 @@ public class MainActivity extends AppCompatActivity
             });
         }
     }
-    
+
     private void loadCurrentUserInUI(final User currUser) {
         if (currUser != null) {
             runOnUiThread(
@@ -231,7 +265,7 @@ public class MainActivity extends AppCompatActivity
             );
         }
     }
-    
+
     private void startSession() {
         linearLayoutLoading.setVisibility(View.GONE);
         final VKManager vkManager = VKManager.getInstance();
@@ -240,6 +274,7 @@ public class MainActivity extends AppCompatActivity
         Intent serviceIntent = new Intent(MainActivity.this, UpdateService.class);
         startService(serviceIntent);
         SingleFragmentActivity.addFragmentToActivity(new FragmentListUsers(), this, R.id.fragment_host);
+        
     }
 
     private void saveAccessToken(String accessToken) {

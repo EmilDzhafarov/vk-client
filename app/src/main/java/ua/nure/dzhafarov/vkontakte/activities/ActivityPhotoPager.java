@@ -19,6 +19,7 @@ import ua.nure.dzhafarov.vkontakte.models.Photo;
 
 public class ActivityPhotoPager extends FragmentActivity {
 
+    public static final String EXTRA_PHOTO_POSITION = "extra_photo_position";
     public static final String EXTRA_PHOTO_ID = "photo_id";
     public static final String EXTRA_LIST_PHOTOS = "list_photos";
     
@@ -32,6 +33,7 @@ public class ActivityPhotoPager extends FragmentActivity {
     
     private ViewPager viewPager;
     private List<Photo> photos;
+    private int position;
     
     @SuppressWarnings("unchecked")
     @Override
@@ -50,6 +52,7 @@ public class ActivityPhotoPager extends FragmentActivity {
         viewPager.setAdapter(new FragmentStatePagerAdapter(fragmentManager) {
             @Override
             public Fragment getItem(int position) {
+                ActivityPhotoPager.this.position = position;
                 return FragmentPhoto.newInstance(photos.get(position));
             }
 
@@ -65,5 +68,13 @@ public class ActivityPhotoPager extends FragmentActivity {
                 break;
             }
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        Intent intent = new Intent();
+        intent.putExtra(EXTRA_PHOTO_POSITION, position);
+        setResult(RESULT_OK, intent);
+        finish();
     }
 }

@@ -26,11 +26,15 @@ import ua.nure.dzhafarov.vkontakte.utils.OnUserClickListener;
 import ua.nure.dzhafarov.vkontakte.utils.OperationListener;
 import ua.nure.dzhafarov.vkontakte.utils.VKManager;
 
+import static android.app.Activity.RESULT_OK;
+import static ua.nure.dzhafarov.vkontakte.activities.ActivityPhotoPager.EXTRA_PHOTO_POSITION;
 import static ua.nure.dzhafarov.vkontakte.activities.ActivityUserProfile.REQUEST_USER_PROFILE;
 
 public class FragmentListPhotos extends Fragment {
     
     public static final String REQUEST_PHOTO_LIST = "request_photo_list";
+    
+    public static final int REQUEST_CODE_OPEN_PHOTO = 1;
     
     private List<Photo> photos;
     private PhotoAdapter photoAdapter;
@@ -76,7 +80,7 @@ public class FragmentListPhotos extends Fragment {
             public void onUserClicked(Photo result, View view) {
                 Intent intent = ActivityPhotoPager.newIntent(getActivity(), 
                         (ArrayList<Photo>) photos, result.getId());
-                startActivity(intent);
+                startActivityForResult(intent, REQUEST_CODE_OPEN_PHOTO);
             }
         });
 
@@ -85,6 +89,16 @@ public class FragmentListPhotos extends Fragment {
         
         getActivity().setTitle(String.format(Locale.ROOT, "%s", photoAlbum.getTitle()));
         loadPhotos(owner);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        
+        if (requestCode == REQUEST_CODE_OPEN_PHOTO && resultCode == RESULT_OK) {
+            int position = data.getIntExtra(EXTRA_PHOTO_POSITION, 0);
+            recyclerView.scrollToPosition(position);
+        }
     }
 
     private void loadPhotos(User owner) {

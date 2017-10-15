@@ -37,6 +37,7 @@ public class FragmentListUsers extends Fragment {
     private FriendAdapter friendAdapter;
     private VKManager vkManager;
     private List<User> users;
+    private Button tryAgainButton;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -65,6 +66,14 @@ public class FragmentListUsers extends Fragment {
         recyclerView = (RecyclerView) view.findViewById(R.id.recycler_view_friends);
         recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
 
+        tryAgainButton = (Button) view.findViewById(R.id.try_again_button); 
+        tryAgainButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                loadingUsers();
+            }
+        });
+        
         users = new ArrayList<>();
         friendAdapter = new FriendAdapter(users, getActivity(), new OnUserClickListener<User>() {
             @Override
@@ -105,6 +114,8 @@ public class FragmentListUsers extends Fragment {
 
     private void loadingUsers() {
         swipeRefreshLayout.setRefreshing(true);
+        tryAgainButton.setVisibility(View.GONE);
+        
         vkManager.loadFriends(new OperationListener<List<User>>() {
             @Override
             public void onSuccess(final List<User> friends) {
@@ -112,15 +123,25 @@ public class FragmentListUsers extends Fragment {
             }
 
             @Override
-            public void onFailure(String message) {
+            public void onFailure(final String message) {
                 Activity activity = getActivity();
                 
                 if (activity != null) {
-                    Toast.makeText(
-                            FragmentListUsers.this.getActivity(),
-                            message,
-                            Toast.LENGTH_SHORT
-                    ).show();   
+                    activity.runOnUiThread(
+                            new Runnable() {
+                                @Override
+                                public void run() {
+                                    swipeRefreshLayout.setRefreshing(false);
+                                    tryAgainButton.setVisibility(View.VISIBLE);
+                                    
+                                    Toast.makeText(
+                                            FragmentListUsers.this.getActivity(),
+                                            message,
+                                            Toast.LENGTH_SHORT
+                                    ).show();
+                                }
+                            }
+                    );
                 }
             }
         });

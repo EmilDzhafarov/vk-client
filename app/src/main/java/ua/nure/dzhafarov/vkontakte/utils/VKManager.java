@@ -79,7 +79,7 @@ public class VKManager {
                 }
         ).start();
     }
-    
+
     public void loadPhotosFromAlbum(final Integer ownerId, final Integer albumId, final OperationListener<List<Photo>> listener) {
         new Thread(
                 new Runnable() {
@@ -111,7 +111,7 @@ public class VKManager {
                 }
         ).start();
     }
-    
+
     public void loadMessages(final User user, final Message curr, final ChatLoadListener listener) {
         new Thread(
                 new Runnable() {
@@ -169,7 +169,6 @@ public class VKManager {
                     @Override
                     public void run() {
                         try {
-                            messageLab.addMessage(message);
                             Integer messageId = fetcher.sendMessageToUser(message.getText(), id);
 
                             if (messageId != 0) {
@@ -248,18 +247,10 @@ public class VKManager {
     }
 
     public User getCurrentUser() {
-        if (currentUser == null) {
-            throw new IllegalStateException("User has not been initialized yet!");
-        }
-
         return currentUser;
     }
 
     public LongPoll getCurrentLongPoll() {
-        if (longPoll == null) {
-            throw new IllegalStateException("Long poll doesn't initialized!");
-        }
-
         return longPoll;
     }
 

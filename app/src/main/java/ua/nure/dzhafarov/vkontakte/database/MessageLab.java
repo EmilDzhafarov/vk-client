@@ -52,9 +52,9 @@ public class MessageLab {
         return getMessagesFromCursor(cursor);
     }
     
-    public List<Message> getAllUnsentMessagesToUser(Integer fromId) {
+    public List<Message> getAllUnsentMessages(Integer fromId, Integer userId) {
         MessageCursorWrapper cursor = queryMessages(
-                "SELECT * FROM messages WHERE from_id = " + fromId + " AND send_state = 0");
+                "SELECT * FROM messages WHERE from_id = " + fromId + " AND send_state = 0 AND user_id = " + userId);
         
         return getMessagesFromCursor(cursor);
     }

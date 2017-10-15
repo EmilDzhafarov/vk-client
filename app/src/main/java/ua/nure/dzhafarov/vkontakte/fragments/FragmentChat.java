@@ -129,8 +129,8 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
                                         recyclerView.scrollToPosition(messages.size() - mess.size() - 1);
                                     }
                                     
-                                    sendUnsentMessages();
                                     showNewUnreadMessages();
+                                    sendUnsentMessages();
                                     
                                     messageAdapter.notifyDataSetChanged();
                                     swipeRefreshLayout.setRefreshing(false);
@@ -149,6 +149,7 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
                             new Runnable() {
                                 @Override
                                 public void run() {
+                                    swipeRefreshLayout.setRefreshing(false);
                                     Toast.makeText(
                                             getActivity(),
                                             message,
@@ -230,7 +231,7 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
 
     private void sendUnsentMessages() {
         List<Message> unsentMessages = messageLab.
-                getAllUnsentMessagesToUser(vkManager.getCurrentUser().getId());
+                getAllUnsentMessages(vkManager.getCurrentUser().getId(), destUser.getId());
 
         for (Message m : unsentMessages) {
             showNewMessageInUI(m);
@@ -238,47 +239,59 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
         }
     }
 
-    private void sendMessage(Message message) {
-        vkManager.sendMessage(message, message.getUserId(), new OperationListener<Message>() {
-            @Override
-            public void onSuccess(final Message me) {
-                Activity activity = getActivity();
-                
-                if (activity != null) {
-                    activity.runOnUiThread(
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    messageLab.updateMessage(me);
-                                    int pos = messages.indexOf(me);
-                                    messages.set(pos, me);
-                                    messageAdapter.notifyItemChanged(pos);
-                                }
-                            }
-                    );   
-                }
-            }
+    boolean isNetworkConnectionAvailable(Activity activity) {
+        ConnectivityManager cm = (ConnectivityManager) activity.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo info = cm.getActiveNetworkInfo();
+        if (info == null) return false;
+        NetworkInfo.State network = info.getState();
+        return (network == NetworkInfo.State.CONNECTED || network == NetworkInfo.State.CONNECTING);
+    }
 
-            @Override
-            public void onFailure(final String message) {
-                Activity activity = getActivity();
-                
-                if (activity != null) {
-                    activity.runOnUiThread(
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    Toast.makeText(
-                                            getActivity(),
-                                            message,
-                                            Toast.LENGTH_SHORT
-                                    ).show();                   
+    private void sendMessage(Message message) {
+        if (isNetworkConnectionAvailable(getActivity())) {
+            vkManager.sendMessage(message, message.getUserId(), new OperationListener<Message>() {
+                @Override
+                public void onSuccess(final Message me) {
+                    Activity activity = getActivity();
+
+                    if (activity != null) {
+                        activity.runOnUiThread(
+                                new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        messageLab.updateMessage(me);
+                                        int pos = messages.indexOf(me);
+                                        messages.set(pos, me);
+                                        messageAdapter.notifyItemChanged(pos);
+                                    }
                                 }
-                            }
-                    );
+                        );
+                    }
                 }
-            }
-        });
+
+                @Override
+                public void onFailure(final String message) {
+                    Activity activity = getActivity();
+
+                    if (activity != null) {
+                        activity.runOnUiThread(
+                                new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        Toast.makeText(
+                                                getActivity(),
+                                                message,
+                                                Toast.LENGTH_SHORT
+                                        ).show();
+                                    }
+                                }
+                        );
+                    }
+                }
+            });   
+        } else {
+            messageLab.addMessage(message);
+        }
     }
     
     private final OperationListener<Message> listener = new OperationListener<Message>() {
@@ -389,7 +402,7 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
                                 public void run() {
                                     int userId = intent.getIntExtra(UpdateService.CURRENT_USER_ID, -1);
 
-                                    if (userId != -1) {
+                                    if (userId != -1 && userId == destUser.getId()) {
                                         userTypesMessageTextView.startAnimation(animation);
                                     }
                                 }

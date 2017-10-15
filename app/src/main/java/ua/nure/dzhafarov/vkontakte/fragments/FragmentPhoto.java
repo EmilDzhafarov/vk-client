@@ -73,6 +73,8 @@ public class FragmentPhoto extends Fragment {
         progressBar.setVisibility(View.VISIBLE);
         Picasso.with(context)
                 .load(photo.getPhotoURL())
+                .fit()
+                .centerInside()
                 .into(photoImageView, new Callback() {
                     @Override
                     public void onSuccess() {
