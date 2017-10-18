@@ -1,13 +1,18 @@
 package ua.nure.dzhafarov.vkontakte.utils;
 
 import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.util.Log;
 
 import org.json.JSONArray;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import ua.nure.dzhafarov.vkontakte.R;
+import ua.nure.dzhafarov.vkontakte.database.MessageBaseHelper;
 import ua.nure.dzhafarov.vkontakte.database.MessageLab;
 import ua.nure.dzhafarov.vkontakte.models.Community;
 import ua.nure.dzhafarov.vkontakte.models.Photo;
@@ -28,7 +33,8 @@ public class VKManager {
     private User currentUser;
     private MessageLab messageLab;
     private Context context;
-
+    private OperationListener<List<Message>> unsentMessageListener;
+    
     public static synchronized VKManager getInstance() {
         if (instance == null) {
             instance = new VKManager();
@@ -48,6 +54,10 @@ public class VKManager {
         messageLab = MessageLab.getInstance(this.context);
     }
 
+    public void registerUnsentMessagesListener(OperationListener<List<Message>> listener) {
+        this.unsentMessageListener = listener;
+    }
+    
     public void loadFriends(final OperationListener<List<User>> listener) {
         new Thread(
                 new Runnable() {
@@ -128,22 +138,6 @@ public class VKManager {
         ).start();
     }
 
-    public void sendMessage(final String message, final int id, final OperationListener<Void> listener) {
-        new Thread(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            fetcher.sendMessageToUser(message, id);
-                            listener.onSuccess(null);
-                        } catch (IOException iex) {
-                            listener.onFailure(context.getString(R.string.error_connect_server));
-                        }
-                    }
-                }
-        ).start();
-    }
-
     public void markMessageAsRead(final Message message, final OperationListener<Message> listener) {
         new Thread(
                 new Runnable() {
@@ -162,7 +156,7 @@ public class VKManager {
                 }
         ).start();
     }
-
+    
     public void sendMessage(final Message message, final int id, final OperationListener<Message> listener) {
         new Thread(
                 new Runnable() {
@@ -188,6 +182,51 @@ public class VKManager {
         ).start();
     }
 
+    public boolean isNetworksAvailable(Context context) {
+        try {
+            ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo netInfo = cm.getActiveNetworkInfo();
+
+            return (netInfo != null && netInfo.isConnectedOrConnecting());
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    public void sendUnsentMessages() {
+        new Thread(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            List<Message> messages = messageLab.getAllUnsentMessages(currentUser.getId());
+                            
+                            for (Message message : messages) {
+                                Integer messageId = fetcher.sendMessageToUser(message.getText(), message.getUserId());
+                                
+                                if (messageId > 0) {
+                                    message.setSendState(1);
+                                    message.setMessageId(messageId);
+                                    message.setTime(System.currentTimeMillis());
+                                    messageLab.updateMessage(message);
+                                } else {
+                                    Log.e("VkManager", "Error with sending message " + message);
+                                    break;
+                                }
+                            }
+                            
+                            if (unsentMessageListener != null) {
+                                unsentMessageListener.onSuccess(messages);
+                            }
+                        } catch (IOException iex) {
+                            iex.printStackTrace();
+                        }
+                    }
+                }
+        ).start();
+    }
+    
     public void removeFriend(final User user, final OperationListener<User> listener) {
         new Thread(
                 new Runnable() {

@@ -66,11 +66,11 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
                 deliveryImageView.setVisibility(View.VISIBLE);
             } else {
                 if (message.getReadState() == 0) {
-                    messageBodyTextView.setBackground(context.getDrawable(R.drawable.new_message_even));    
+                    messageBodyTextView.setBackground(context.getDrawable(R.drawable.new_message_even));
                 } else {
-                    messageBodyTextView.setBackground(context.getDrawable(R.drawable.even));    
+                    messageBodyTextView.setBackground(context.getDrawable(R.drawable.even));
                 }
-                
+
                 messageTimeTextView.setTextColor(context.getColor(R.color.text_color_get));
                 bodyParams.gravity = Gravity.START;
                 deliveryImageView.setVisibility(View.GONE);
@@ -106,44 +106,48 @@ public class MessageAdapter extends RecyclerView.Adapter<MessageAdapter.MessageH
     public void onBindViewHolder(MessageHolder holder, int position) {
         Message m = messages.get(position);
         holder.bindMessage(m);
-        
-        Calendar cal1 = Calendar.getInstance(Locale.ROOT);
-        Calendar cal2 = Calendar.getInstance(Locale.ROOT);
-        Calendar now = Calendar.getInstance(Locale.ROOT);
-        cal1.setTimeInMillis(m.getTime());
-        
-        if (position == messages.size() - 1) {
-            checkOnCurrentYear(cal1, now, holder.messageDateTextView, m);
-        } else {
-            for (int i = position + 1; i < messages.size(); i++) {
-                cal2.setTimeInMillis(messages.get(i).getTime());
-                boolean sameDay = cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR);
 
-                if (!sameDay) {
-                    checkOnCurrentYear(cal1, now, holder.messageDateTextView, m);
-                } else {
-                    holder.messageDateTextView.setVisibility(View.GONE);
-                    holder.messageDateTextView.setText("");
-                    break;
-                }
-            }
-        }   
+        long nextTs = 0;
+
+        if (position < messages.size() - 1) {
+            Message pm = messages.get(position + 1);
+            nextTs = pm.getTime();
+        }
+
+        setTimeTextVisibility(nextTs, m.getTime(), holder.messageDateTextView);
     }
-    
+
     @Override
     public int getItemCount() {
         return messages.size();
     }
+    
+    private void setTimeTextVisibility(long ts1, long ts2, TextView timeText) {
+        Calendar cal1 = Calendar.getInstance(Locale.ROOT);
+        Calendar cal2 = Calendar.getInstance(Locale.ROOT);
+        cal1.setTimeInMillis(ts1);
+        cal2.setTimeInMillis(ts2);
 
-    private void checkOnCurrentYear(Calendar cal1, Calendar now, TextView textView, Message m) {
-        textView.setVisibility(View.VISIBLE);
-        
-        if (cal1.get(Calendar.YEAR) == now.get(Calendar.YEAR)) {
-            textView.setText(
-                    DateFormat.format(context.getString(R.string.date_form_this_year), m.getTime()));
+        boolean sameDay = cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR);
+
+        if (sameDay) {
+            timeText.setVisibility(View.GONE);
+            timeText.setText("");
         } else {
-            textView.setText(
-                    DateFormat.format(context.getString(R.string.date_form_other_year), m.getTime()));
+            timeText.setVisibility(View.VISIBLE);
+            checkOnSameYear(cal2, timeText, ts2);
+        }
+    }
+
+    private void checkOnSameYear(Calendar cal1, TextView timeText, Long ts) {
+        Calendar now = Calendar.getInstance(Locale.ROOT);
+
+        if (cal1.get(Calendar.YEAR) == now.get(Calendar.YEAR)) {
+            timeText.setText(
+                    DateFormat.format(context.getString(R.string.date_form_this_year), ts));
+        } else {
+            timeText.setText(
+                    DateFormat.format(context.getString(R.string.date_form_other_year), ts));
         }
     }
 }

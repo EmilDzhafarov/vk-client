@@ -15,7 +15,9 @@ import java.util.List;
 
 import ua.nure.dzhafarov.vkontakte.R;
 import ua.nure.dzhafarov.vkontakte.fragments.FragmentPhoto;
+import ua.nure.dzhafarov.vkontakte.models.Message;
 import ua.nure.dzhafarov.vkontakte.models.Photo;
+import ua.nure.dzhafarov.vkontakte.utils.OperationListener;
 
 public class ActivityPhotoPager extends FragmentActivity {
 

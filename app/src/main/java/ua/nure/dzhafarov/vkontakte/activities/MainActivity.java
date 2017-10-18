@@ -5,9 +5,6 @@ import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.NavigationView;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
@@ -23,7 +20,6 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -39,7 +35,7 @@ import ua.nure.dzhafarov.vkontakte.services.UpdateService;
 import ua.nure.dzhafarov.vkontakte.utils.OperationListener;
 import ua.nure.dzhafarov.vkontakte.utils.VKManager;
 
-public class MainActivity extends AppCompatActivity
+public class MainActivity extends BaseActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private static final String ACCESS_TOKEN = "access_token";
@@ -119,6 +115,11 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
+    protected Integer getHostId() {
+        return R.id.fragment_host;
+    }
+
+    @Override
     public void onBackPressed() {
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
@@ -161,13 +162,12 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_communities) {
-            SingleFragmentActivity.addFragmentToActivity(new FragmentListCommunities(), this, R.id.fragment_host);
+            addFragment(new FragmentListCommunities(), true);
         } else if (id == R.id.nav_photos) {
             User user = VKManager.getInstance().getCurrentUser();
 
             if (user != null) {
-                SingleFragmentActivity.addFragmentToActivity(
-                        FragmentListPhotoAlbums.newInstance(user), this, R.id.fragment_host);
+                addFragment(FragmentListPhotoAlbums.newInstance(user), true);
             }
         }
 
@@ -175,7 +175,7 @@ public class MainActivity extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
-
+    
     private WebViewClient webViewClient = new WebViewClient() {
 
         @Override
@@ -273,7 +273,7 @@ public class MainActivity extends AppCompatActivity
         initializeCurrentUser();
         Intent serviceIntent = new Intent(MainActivity.this, UpdateService.class);
         startService(serviceIntent);
-        SingleFragmentActivity.addFragmentToActivity(new FragmentListUsers(), this, R.id.fragment_host);
+        addFragment(new FragmentListUsers(), true);
         
     }
 

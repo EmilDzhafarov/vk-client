@@ -92,26 +92,7 @@ public class FragmentListUsers extends Fragment {
 
         loadingUsers();
     }
-
-    private void sendMessageInUI() {
-        final Activity activity = getActivity();
-
-        if (activity != null) {
-            activity.runOnUiThread(
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(
-                                    activity,
-                                    activity.getString(R.string.success_send_message),
-                                    Toast.LENGTH_LONG
-                            ).show();
-                        }
-                    }
-            );
-        }
-    }
-
+    
     private void loadingUsers() {
         swipeRefreshLayout.setRefreshing(true);
         tryAgainButton.setVisibility(View.GONE);
@@ -180,9 +161,6 @@ public class FragmentListUsers extends Fragment {
                             }
                         });
                         break;
-                    case R.id.write_message:
-                        createMessageDialog(user);
-                        break;
                     default:
                         break;
                 }
@@ -237,61 +215,4 @@ public class FragmentListUsers extends Fragment {
             );
         }
     }
-
-    private void createMessageDialog(final User user) {
-        final Activity activity = getActivity();
-
-        if (activity != null) {
-            final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-            View view = getActivity().getLayoutInflater().inflate(R.layout.send_message_layout, null);
-
-            final EditText editText = (EditText) view.findViewById(R.id.message);
-            final Button sendBtn = (Button) view.findViewById(R.id.send_button_message);
-            final Button cancelBtn = (Button) view.findViewById(R.id.cancel_button_message);
-
-            final AlertDialog dialog = builder.setTitle(
-                    activity.getString(R.string.input_message_body)
-            ).setView(view).show();
-
-            sendBtn.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    VKManager.getInstance().sendMessage(
-                            editText.getText().toString(),
-                            user.getId(),
-                            new OperationListener<Void>() {
-                                @Override
-                                public void onSuccess(Void object) {
-                                    sendMessageInUI();
-                                }
-
-                                @Override
-                                public void onFailure(final String message) {
-                                    activity.runOnUiThread(
-                                            new Runnable() {
-                                                @Override
-                                                public void run() {
-                                                    Toast.makeText(
-                                                            activity,
-                                                            message,
-                                                            Toast.LENGTH_SHORT
-                                                    ).show();
-                                                }
-                                            }
-                                    );
-                                }
-                            });
-                    dialog.dismiss();
-                }
-            });
-
-            cancelBtn.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    dialog.dismiss();
-                }
-            });
-        }
-    }
-
 }

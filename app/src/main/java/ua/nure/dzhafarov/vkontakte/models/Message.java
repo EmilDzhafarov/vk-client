@@ -95,7 +95,7 @@ public class Message implements Serializable {
 
         Message message = (Message) o;
 
-        return messageId == message.messageId;
+        return id == message.id;
 
     }
 

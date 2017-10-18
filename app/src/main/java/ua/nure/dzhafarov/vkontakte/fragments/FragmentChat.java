@@ -5,8 +5,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -23,9 +21,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import ua.nure.dzhafarov.vkontakte.R;
+import ua.nure.dzhafarov.vkontakte.activities.BaseActivity;
 import ua.nure.dzhafarov.vkontakte.adapters.MessageAdapter;
 import ua.nure.dzhafarov.vkontakte.database.MessageLab;
 import ua.nure.dzhafarov.vkontakte.models.User;
@@ -59,7 +60,7 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-
+        
         swipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.swipe_layout_messages);
         swipeRefreshLayout.setColorSchemeColors(getActivity().getColor(R.color.colorPrimary));
         swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
@@ -71,7 +72,7 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
 
         recyclerView = (RecyclerView) view.findViewById(R.id.chat_messages_recycler_view);
         messageTypeField = (EditText) view.findViewById(R.id.send_body_message);
-        
+
         sendMessageButton = (ImageButton) view.findViewById(R.id.send_button_message);
         sendMessageButton.setOnClickListener(this);
         userTypesMessageTextView = (TextView) view.findViewById(R.id.user_types_text_view);
@@ -86,7 +87,7 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
 
         destUser = (User) getActivity().getIntent().getSerializableExtra(REQUEST_USER_PROFILE);
         Activity activity = getActivity();
-        
+
         if (destUser != null && activity != null) {
             activity.setTitle(
                     getString(
@@ -95,16 +96,43 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
                             destUser.getLastName()
                     )
             );
-            
+
             userTypesMessageTextView.setText(
                     getString(R.string.user_typing,
                             destUser.getFirstName()
                     )
-            );   
+            );
         }
 
         vkManager = VKManager.getInstance();
         messageLab = MessageLab.getInstance(getActivity());
+
+        vkManager.registerUnsentMessagesListener(new OperationListener<List<Message>>() {
+            @Override
+            public void onSuccess(final List<Message> object) {
+                Activity activity = getActivity();
+
+                if (activity != null) {
+                    activity.runOnUiThread(
+                            new Runnable() {
+                                @Override
+                                public void run() {
+                                    for (Message message : object) {
+                                        int pos = messages.indexOf(message);
+                                        messages.set(pos, message);
+                                        messageAdapter.notifyDataSetChanged();
+                                    }
+                                }
+                            }
+                    );
+                }
+            }
+
+            @Override
+            public void onFailure(String message) {
+
+            }
+        });
         
         loadingMessages(null);
     }
@@ -128,10 +156,9 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
                                         messages.addAll(mess.subList(1, mess.size()));
                                         recyclerView.scrollToPosition(messages.size() - mess.size() - 1);
                                     }
-                                    
+
                                     showNewUnreadMessages();
-                                    sendUnsentMessages();
-                                    
+
                                     messageAdapter.notifyDataSetChanged();
                                     swipeRefreshLayout.setRefreshing(false);
                                 }
@@ -143,7 +170,7 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
             @Override
             public void onFailure(final String message) {
                 Activity activity = getActivity();
-                
+
                 if (activity != null) {
                     activity.runOnUiThread(
                             new Runnable() {
@@ -154,7 +181,7 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
                                             getActivity(),
                                             message,
                                             Toast.LENGTH_SHORT
-                                    ).show();                   
+                                    ).show();
                                 }
                             }
                     );
@@ -162,7 +189,7 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
             }
         });
     }
-    
+
     @Override
     public void onClick(View v) {
         if (v.getId() == R.id.send_button_message) {
@@ -171,12 +198,12 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
             if (!body.trim().isEmpty()) {
                 final Message message = createMessageFromString(body);
                 showNewMessageInUI(message);
-                
+
                 sendMessage(message);
             }
         }
     }
-    
+
     @Override
     public void onStart() {
         super.onStart();
@@ -188,7 +215,7 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
         super.onStop();
         getActivity().unregisterReceiver(receiver);
     }
-    
+
     private void registerReceiver() {
         receiver = new MessageReceiver();
         IntentFilter intentFilter = new IntentFilter();
@@ -218,7 +245,7 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
 
         return message;
     }
-    
+
     private void showNewUnreadMessages() {
         List<Message> messages = messageLab.getAllUnreadMessagesWithUser(destUser.getId());
 
@@ -228,28 +255,10 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
 
         markMessagesAsRead(messages);
     }
-
-    private void sendUnsentMessages() {
-        List<Message> unsentMessages = messageLab.
-                getAllUnsentMessages(vkManager.getCurrentUser().getId(), destUser.getId());
-
-        for (Message m : unsentMessages) {
-            showNewMessageInUI(m);
-            sendMessage(m);
-        }
-    }
-
-    boolean isNetworkConnectionAvailable(Activity activity) {
-        ConnectivityManager cm = (ConnectivityManager) activity.getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo info = cm.getActiveNetworkInfo();
-        if (info == null) return false;
-        NetworkInfo.State network = info.getState();
-        return (network == NetworkInfo.State.CONNECTED || network == NetworkInfo.State.CONNECTING);
-    }
-
+    
     private void sendMessage(Message message) {
-        if (isNetworkConnectionAvailable(getActivity())) {
-            vkManager.sendMessage(message, message.getUserId(), new OperationListener<Message>() {
+        if (vkManager.isNetworksAvailable(getActivity())) {
+            vkManager.sendMessage(message, destUser.getId(), new OperationListener<Message>() {
                 @Override
                 public void onSuccess(final Message me) {
                     Activity activity = getActivity();
@@ -288,12 +297,12 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
                         );
                     }
                 }
-            });   
+            });    
         } else {
-            messageLab.addMessage(message);
+            messageLab.addMessage(message);   
         }
     }
-    
+
     private final OperationListener<Message> listener = new OperationListener<Message>() {
         @Override
         public void onSuccess(Message object) {
@@ -306,17 +315,17 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
             // skip this method here
         }
     };
-    
+
     private void markMessagesAsRead(List<Message> messages) {
         for (Message m : messages) {
             vkManager.markMessageAsRead(m, listener);
         }
     }
-    
+
     private class MessageReceiver extends BroadcastReceiver {
 
         private Animation animation = new AlphaAnimation(0.0f, 1.0f);
-        
+
         public MessageReceiver() {
             super();
 
@@ -341,11 +350,11 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
             animation.setDuration(5000);
             animation.setStartOffset(20);
         }
-        
+
         @Override
         public void onReceive(Context context, final Intent intent) {
             final Activity activity = getActivity();
-         
+
             if (activity != null) {
                 if (intent.getAction().equals(UpdateService.ACTION_SEND_MESSAGE_VK)) {
                     activity.runOnUiThread(

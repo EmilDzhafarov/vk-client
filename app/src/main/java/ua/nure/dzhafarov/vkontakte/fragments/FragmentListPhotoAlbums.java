@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Locale;
 
 import ua.nure.dzhafarov.vkontakte.R;
+import ua.nure.dzhafarov.vkontakte.activities.BaseActivity;
 import ua.nure.dzhafarov.vkontakte.activities.SingleFragmentActivity;
 import ua.nure.dzhafarov.vkontakte.adapters.PhotoAlbumAdapter;
 import ua.nure.dzhafarov.vkontakte.models.PhotoAlbum;
@@ -140,7 +141,7 @@ public class FragmentListPhotoAlbums extends Fragment {
 
     private void startLoadingPhotos(PhotoAlbum album) {
         FragmentListPhotos listPhotos = FragmentListPhotos.newInstance(owner, album);
-        SingleFragmentActivity.addFragmentToActivity(listPhotos, getActivity(), R.id.fragment_host);
+        ((BaseActivity) getActivity()).addFragment(listPhotos, true);
     }
     
     private void checkOnEmpty() {

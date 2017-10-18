@@ -17,7 +17,7 @@ import java.util.Locale;
 import de.hdodenhof.circleimageview.CircleImageView;
 import ua.nure.dzhafarov.vkontakte.R;
 import ua.nure.dzhafarov.vkontakte.activities.ActivityChat;
-import ua.nure.dzhafarov.vkontakte.activities.SingleFragmentActivity;
+import ua.nure.dzhafarov.vkontakte.activities.BaseActivity;
 import ua.nure.dzhafarov.vkontakte.models.User;
 
 import static ua.nure.dzhafarov.vkontakte.activities.ActivityUserProfile.REQUEST_USER_PROFILE;
@@ -118,7 +118,7 @@ public class FragmentUserProfile extends Fragment implements View.OnClickListene
             startActivity(intent);   
         } else if (v.getId() == R.id.show_photos_button) {
             FragmentListPhotoAlbums albums = FragmentListPhotoAlbums.newInstance(user);
-            SingleFragmentActivity.addFragmentToActivity(albums, getActivity(), R.id.fragment_host);
+            ((BaseActivity) getActivity()).addFragment(albums, true);
         }
     }
 }
