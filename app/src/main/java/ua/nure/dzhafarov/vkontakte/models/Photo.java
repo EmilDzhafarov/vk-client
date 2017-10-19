@@ -6,7 +6,8 @@ import java.io.Serializable;
 public class Photo implements Serializable {
     
     private int id;
-    private String photoURL;
+    private String photoLowResolution;
+    private String photoHighResolution;
     private int ownerId;
 
     public int getId() {
@@ -17,12 +18,20 @@ public class Photo implements Serializable {
         this.id = id;
     }
 
-    public String getPhotoURL() {
-        return photoURL;
+    public String getPhotoLowResolution() {
+        return photoLowResolution;
     }
 
-    public void setPhotoURL(String photoURL) {
-        this.photoURL = photoURL;
+    public void setPhotoLowResolution(String photoLowResolution) {
+        this.photoLowResolution = photoLowResolution;
+    }
+
+    public String getPhotoHighResolution() {
+        return photoHighResolution;
+    }
+
+    public void setPhotoHighResolution(String photoURL2560) {
+        this.photoHighResolution = photoURL2560;
     }
 
     public int getOwnerId() {
@@ -33,3 +42,4 @@ public class Photo implements Serializable {
         this.ownerId = ownerId;
     }
 }
+

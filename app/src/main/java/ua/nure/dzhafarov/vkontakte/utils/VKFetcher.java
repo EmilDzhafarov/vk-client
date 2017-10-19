@@ -384,11 +384,18 @@ class VKFetcher {
         
         photo.setId(curr.getInt("id"));
         photo.setOwnerId(curr.getInt("owner_id"));
-        
+       
         JSONArray sizes = curr.getJSONArray("sizes");
+        for (int i = 0; i < sizes.length(); i++) {
+            JSONObject obj = sizes.getJSONObject(i);
+            if (obj.getString("type").equals("p") || obj.getString("type").equals("q")) {
+                photo.setPhotoLowResolution(obj.getString("src"));
+                break;
+            }
+        }
         
         JSONObject obj = sizes.getJSONObject(sizes.length() - 1);
-        photo.setPhotoURL(obj.getString("src"));
+        photo.setPhotoHighResolution(obj.getString("src"));
         
         return photo;
     }

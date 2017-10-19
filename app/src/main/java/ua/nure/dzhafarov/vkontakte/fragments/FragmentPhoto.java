@@ -72,7 +72,7 @@ public class FragmentPhoto extends Fragment {
     private void loadPhotoInUI(Context context) {
         progressBar.setVisibility(View.VISIBLE);
         Picasso.with(context)
-                .load(photo.getPhotoURL())
+                .load(photo.getPhotoHighResolution())
                 .fit()
                 .centerInside()
                 .into(photoImageView, new Callback() {

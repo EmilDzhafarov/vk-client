@@ -31,7 +31,7 @@ public class PhotoAdapter extends RecyclerView.Adapter<PhotoAdapter.PhotoHolder>
         void bindPhoto(final Photo photo) {
             this.photo = photo;
             
-            Picasso.with(context).load(photo.getPhotoURL()).into(photoImageView);
+            Picasso.with(context).load(photo.getPhotoLowResolution()).into(photoImageView);
         }
 
         @Override
