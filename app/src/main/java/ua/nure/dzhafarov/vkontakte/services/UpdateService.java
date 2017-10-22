@@ -4,10 +4,12 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 import android.util.Log;
-import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 import ua.nure.dzhafarov.vkontakte.database.MessageLab;
 import ua.nure.dzhafarov.vkontakte.models.LongPoll;
@@ -18,6 +20,8 @@ import ua.nure.dzhafarov.vkontakte.utils.VKManager;
 public class UpdateService extends Service {
 
     private VKManager vkManager;
+    private ReentrantLock reentrantLock = new ReentrantLock();
+    private Condition condition = reentrantLock.newCondition();
 
     public static final String ACTION_SEND_MESSAGE_VK = "action_send_message_vk";
     public static final String ACTION_USER_READ_MESSAGE = "action_user_read_message";
@@ -25,7 +29,7 @@ public class UpdateService extends Service {
 
     public static final String CURRENT_USER_ID = "current_user_id";
     public static final String MESSAGE_LOCAL_ID = "message_local_id";
-
+    
     @Override
     public void onCreate() {
         super.onCreate();
@@ -60,50 +64,63 @@ public class UpdateService extends Service {
     }
 
     private void startConnectingLongPollService() {
-        final Long currTs = vkManager.getCurrentLongPoll().getTs();
+        reentrantLock.lock();
+        
+        try {
+            while (!vkManager.isNetworksAvailable(this)) {
+                condition.await();
+            }
+            
+            final Long currTs = vkManager.getCurrentLongPoll().getTs();
 
-        if (currTs == 0) {
-            vkManager.initLongPoll(new OperationListener<LongPoll>() {
-                @Override
-                public void onSuccess(LongPoll object) {
-                    startConnectingLongPollService();
-                }
+            if (currTs == 0) {
+                vkManager.initLongPoll(new OperationListener<LongPoll>() {
+                    @Override
+                    public void onSuccess(LongPoll object) {
+                        startConnectingLongPollService();
+                    }
 
-                @Override
-                public void onFailure(String message) {
-                    Log.e(UpdateService.class.getSimpleName(), message);
-                }
-            });
-        } else {
-            vkManager.connectToLongPollServer(currTs, new OperationListener<JSONArray>() {
-                @Override
-                public void onSuccess(JSONArray object) {
-                    try {
-                        for (int i = 0; i < object.length(); i++) {
-                            JSONArray event = object.getJSONArray(i);
-                            int eventCode = event.getInt(0);
+                    @Override
+                    public void onFailure(String message) {
+                        Log.e(UpdateService.class.getSimpleName(), message);
+                    }
+                });
+            } else {
+                vkManager.connectToLongPollServer(currTs, new OperationListener<JSONArray>() {
+                    @Override
+                    public void onSuccess(JSONArray object) {
+                        try {
+                            for (int i = 0; i < object.length(); i++) {
+                                JSONArray event = object.getJSONArray(i);
+                                int eventCode = event.getInt(0);
 
-                            if (eventCode == 4) {
-                                sendBroadcastToShowNewMessage(event);
-                            } else if (eventCode == 7) {
-                                sendBroadcastToShowReadingEvent(event);
-                            } else if (eventCode == 61) {
-                                sendBroadcastToShowUserTypes(event);
+                                if (eventCode == 4) {
+                                    sendBroadcastToShowNewMessage(event);
+                                } else if (eventCode == 7) {
+                                    sendBroadcastToShowReadingEvent(event);
+                                } else if (eventCode == 61) {
+                                    sendBroadcastToShowUserTypes(event);
+                                }
                             }
+
+                        } catch (JSONException ex) {
+                            ex.printStackTrace();
                         }
                         
-                    } catch (JSONException ex) {
-                        ex.printStackTrace();
+                        condition.signal();
+                        startConnectingLongPollService();
                     }
-                    
-                    startConnectingLongPollService();
-                }
 
-                @Override
-                public void onFailure(String message) {
-                    Log.e(UpdateService.class.getSimpleName(), message);
-                }
-            });
+                    @Override
+                    public void onFailure(String message) {
+                        Log.e(UpdateService.class.getSimpleName(), message);
+                    }
+                });
+            }
+        } catch (InterruptedException iex) {
+            iex.printStackTrace();
+        } finally {
+            reentrantLock.unlock();
         }
     }
 

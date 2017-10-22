@@ -9,6 +9,7 @@ import android.net.NetworkInfo;
 import java.util.List;
 
 import ua.nure.dzhafarov.vkontakte.models.Message;
+import ua.nure.dzhafarov.vkontakte.services.UpdateService;
 import ua.nure.dzhafarov.vkontakte.utils.OperationListener;
 import ua.nure.dzhafarov.vkontakte.utils.VKManager;
 
@@ -27,6 +28,7 @@ public class NetworkChangeBroadcastReceiver extends BroadcastReceiver {
                 && vkManager.getCurrentUser() != null) {
             
             if (vkManager.isNetworksAvailable(context)) {
+                peekService(context, new Intent(context, UpdateService.class));
                 vkManager.sendUnsentMessages();
             }
         }
