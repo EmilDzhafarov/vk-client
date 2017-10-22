@@ -3,6 +3,7 @@ package ua.nure.dzhafarov.vkontakte.services;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
+import android.util.Log;
 import android.widget.Toast;
 
 import org.json.JSONArray;
@@ -65,21 +66,19 @@ public class UpdateService extends Service {
             vkManager.initLongPoll(new OperationListener<LongPoll>() {
                 @Override
                 public void onSuccess(LongPoll object) {
-                     startConnectingLongPollService();  
+                    startConnectingLongPollService();
                 }
 
                 @Override
                 public void onFailure(String message) {
-
+                    Log.e(UpdateService.class.getSimpleName(), message);
                 }
             });
-            
         } else {
             vkManager.connectToLongPollServer(currTs, new OperationListener<JSONArray>() {
                 @Override
                 public void onSuccess(JSONArray object) {
                     try {
-
                         for (int i = 0; i < object.length(); i++) {
                             JSONArray event = object.getJSONArray(i);
                             int eventCode = event.getInt(0);
@@ -92,31 +91,31 @@ public class UpdateService extends Service {
                                 sendBroadcastToShowUserTypes(event);
                             }
                         }
-
-                        startConnectingLongPollService();
-
+                        
                     } catch (JSONException ex) {
                         ex.printStackTrace();
                     }
+                    
+                    startConnectingLongPollService();
                 }
 
                 @Override
                 public void onFailure(String message) {
-                    
+                    Log.e(UpdateService.class.getSimpleName(), message);
                 }
-            });    
+            });
         }
     }
 
     private void sendBroadcastToShowUserTypes(JSONArray data) throws JSONException {
         int userId = data.getInt(1);
-        
+
         Intent intent = new Intent();
         intent.putExtra(CURRENT_USER_ID, userId);
         intent.setAction(ACTION_USER_TYPES_MESSAGE);
         sendBroadcast(intent);
     }
-    
+
     private void sendBroadcastToShowReadingEvent(JSONArray data) throws JSONException {
         int userId = data.getInt(1);
         int localId = data.getInt(2);
@@ -130,7 +129,7 @@ public class UpdateService extends Service {
 
     private void sendBroadcastToShowNewMessage(JSONArray event) throws JSONException {
         Message message = new Message();
-        
+
         message.setMessageId(event.getInt(1));
         message.setTime(event.getLong(4) * 1000);
         message.setText(event.getString(5));

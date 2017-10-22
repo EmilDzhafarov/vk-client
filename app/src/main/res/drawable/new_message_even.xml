@@ -4,7 +4,7 @@
     <stroke
         android:width="0dip"
         android:color="@color/new_message" />
-    <corners android:radius="6dip" />
+    <corners android:radius="10dip" />
     <padding
         android:bottom="0dip"
         android:left="0dip"

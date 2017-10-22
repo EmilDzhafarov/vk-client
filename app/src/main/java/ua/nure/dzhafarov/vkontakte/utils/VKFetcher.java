@@ -416,10 +416,13 @@ class VKFetcher {
             album.setDescription(curr.getString("description"));
         }
         
-        if (curr.has("sizes")) {
-            JSONArray photoSizes = curr.getJSONArray("sizes");
-            JSONObject phSize = photoSizes.getJSONObject(photoSizes.length() - 1);
-            album.setThumbSrc(phSize.getString("src"));
+        JSONArray array = curr.getJSONArray("sizes");
+        for (int i = 0; i < array.length(); i++) {
+            JSONObject obj = array.getJSONObject(i);
+            if (obj.getString("type").equals("q")) {
+                album.setThumbSrc(obj.getString("src"));
+                break;
+            }
         }
         
         return album;

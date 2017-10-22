@@ -1,22 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.v4.widget.SwipeRefreshLayout
-    android:id="@+id/swipe_layout_messages"
     xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/swipe_layout_messages"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <LinearLayout
-        android:orientation="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="@drawable/chat_background">
+        android:background="@drawable/chat_background"
+        android:orientation="vertical">
 
         <android.support.v7.widget.RecyclerView
             android:id="@+id/chat_messages_recycler_view"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="9"
-            android:isScrollContainer="true">
+            android:layout_weight="9">
 
         </android.support.v7.widget.RecyclerView>
 
@@ -26,45 +25,44 @@
             android:layout_height="wrap_content"
             android:layout_margin="8dp"
             android:textSize="16sp"
-            android:visibility="gone"/>
-        
-        <LinearLayout
-            xmlns:android="http://schemas.android.com/apk/res/android"
+            android:visibility="gone" />
+
+        <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="bottom"
-            android:padding="8dp"
             android:background="#fff"
-            android:orientation="horizontal">
+            android:gravity="bottom"
+            android:orientation="horizontal"
+            android:padding="8dp">
 
             <ImageButton
                 android:id="@+id/attach_file_button"
                 android:layout_width="0dp"
-                android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
+                android:layout_weight="1"
                 android:background="?attr/selectableItemBackgroundBorderless"
+                android:gravity="center_vertical"
                 android:src="@drawable/attach_file" />
-            
+
             <EditText
                 android:id="@+id/send_body_message"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="8"
                 android:layout_gravity="center_vertical"
-                android:hint="Enter your message: "
+                android:layout_weight="8"
                 android:background="@android:color/transparent"
-                android:maxLines="2"/>
+                android:hint="Message: "
+                android:maxLines="2" />
 
             <ImageButton
                 android:id="@+id/send_button_message"
                 android:layout_width="0dp"
-                android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:gravity="center_vertical"
+                android:layout_weight="1"
                 android:background="?attr/selectableItemBackgroundBorderless"
+                android:gravity="center_vertical"
                 android:src="@drawable/send" />
         </LinearLayout>
     </LinearLayout>
-    
+
 </android.support.v4.widget.SwipeRefreshLayout>

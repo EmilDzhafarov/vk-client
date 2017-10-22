@@ -9,6 +9,8 @@ import org.json.JSONArray;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import ua.nure.dzhafarov.vkontakte.R;
@@ -25,8 +27,7 @@ public class VKManager {
 
     private static VKManager instance;
 
-    private VKManager() {
-    }
+    private VKManager() {}
 
     private VKFetcher fetcher;
     private LongPoll longPoll;
@@ -34,7 +35,8 @@ public class VKManager {
     private MessageLab messageLab;
     private Context context;
     private OperationListener<List<Message>> unsentMessageListener;
-    
+    private ExecutorService executorService;
+
     public static synchronized VKManager getInstance() {
         if (instance == null) {
             instance = new VKManager();
@@ -52,14 +54,19 @@ public class VKManager {
         currentUser = new User();
         longPoll = new LongPoll();
         messageLab = MessageLab.getInstance(this.context);
+        executorService = Executors.newFixedThreadPool(2);
     }
 
     public void registerUnsentMessagesListener(OperationListener<List<Message>> listener) {
         this.unsentMessageListener = listener;
     }
+
+    public void unregisterUnsentMessagesListener() {
+        this.unsentMessageListener = null;
+    }
     
     public void loadFriends(final OperationListener<List<User>> listener) {
-        new Thread(
+        executorService.execute(
                 new Runnable() {
                     @Override
                     public void run() {
@@ -71,11 +78,11 @@ public class VKManager {
                         }
                     }
                 }
-        ).start();
+        );
     }
 
     public void loadCommunities(final OperationListener<List<Community>> listener) {
-        new Thread(
+        executorService.execute(
                 new Runnable() {
                     @Override
                     public void run() {
@@ -87,11 +94,11 @@ public class VKManager {
                         }
                     }
                 }
-        ).start();
+        );
     }
 
     public void loadPhotosFromAlbum(final Integer ownerId, final Integer albumId, final OperationListener<List<Photo>> listener) {
-        new Thread(
+        executorService.execute(
                 new Runnable() {
                     @Override
                     public void run() {
@@ -103,11 +110,11 @@ public class VKManager {
                         }
                     }
                 }
-        ).start();
+        );
     }
 
     public void loadPhotoAlbums(final Integer ownerId, final OperationListener<List<PhotoAlbum>> listener) {
-        new Thread(
+        executorService.execute(
                 new Runnable() {
                     @Override
                     public void run() {
@@ -119,11 +126,11 @@ public class VKManager {
                         }
                     }
                 }
-        ).start();
+        );
     }
 
     public void loadMessages(final User user, final Message curr, final ChatLoadListener listener) {
-        new Thread(
+        executorService.execute(
                 new Runnable() {
                     @Override
                     public void run() {
@@ -135,11 +142,11 @@ public class VKManager {
                         }
                     }
                 }
-        ).start();
+        );
     }
 
     public void markMessageAsRead(final Message message, final OperationListener<Message> listener) {
-        new Thread(
+        executorService.execute(
                 new Runnable() {
                     @Override
                     public void run() {
@@ -154,11 +161,11 @@ public class VKManager {
                         }
                     }
                 }
-        ).start();
+        );
     }
-    
+
     public void sendMessage(final Message message, final int id, final OperationListener<Message> listener) {
-        new Thread(
+        executorService.execute(
                 new Runnable() {
                     @Override
                     public void run() {
@@ -179,32 +186,20 @@ public class VKManager {
                         }
                     }
                 }
-        ).start();
-    }
-
-    public boolean isNetworksAvailable(Context context) {
-        try {
-            ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-            NetworkInfo netInfo = cm.getActiveNetworkInfo();
-
-            return (netInfo != null && netInfo.isConnectedOrConnecting());
-        } catch (NullPointerException e) {
-            e.printStackTrace();
-            return false;
-        }
+        );
     }
     
     public void sendUnsentMessages() {
-        new Thread(
+        executorService.execute(
                 new Runnable() {
                     @Override
                     public void run() {
                         try {
                             List<Message> messages = messageLab.getAllUnsentMessages(currentUser.getId());
-                            
+
                             for (Message message : messages) {
                                 Integer messageId = fetcher.sendMessageToUser(message.getText(), message.getUserId());
-                                
+
                                 if (messageId > 0) {
                                     message.setSendState(1);
                                     message.setMessageId(messageId);
@@ -215,7 +210,7 @@ public class VKManager {
                                     break;
                                 }
                             }
-                            
+
                             if (unsentMessageListener != null) {
                                 unsentMessageListener.onSuccess(messages);
                             }
@@ -224,11 +219,11 @@ public class VKManager {
                         }
                     }
                 }
-        ).start();
+        );
     }
-    
+
     public void removeFriend(final User user, final OperationListener<User> listener) {
-        new Thread(
+        executorService.execute(
                 new Runnable() {
                     @Override
                     public void run() {
@@ -246,19 +241,11 @@ public class VKManager {
                         }
                     }
                 }
-        ).start();
+        );
     }
-
-    public void connectToLongPollServer(final Long ts, OperationListener<JSONArray> eventListener) {
-        try {
-            fetcher.connectToLongPollServer(ts, eventListener);
-        } catch (IOException iex) {
-            eventListener.onFailure(context.getString(R.string.error_connect_server));
-        }
-    }
-
+    
     public void loadCurrentUser(final OperationListener<User> listener) {
-        new Thread(
+        executorService.execute(
                 new Runnable() {
                     @Override
                     public void run() {
@@ -282,17 +269,29 @@ public class VKManager {
                         }
                     }
                 }
-        ).start();
+        );
     }
 
-    public User getCurrentUser() {
-        return currentUser;
-    }
+    public boolean isNetworksAvailable(Context context) {
+        try {
+            ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo netInfo = cm.getActiveNetworkInfo();
 
-    public LongPoll getCurrentLongPoll() {
-        return longPoll;
+            return (netInfo != null && netInfo.isConnectedOrConnecting());
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
-
+    
+    public void connectToLongPollServer(final Long ts, OperationListener<JSONArray> eventListener) {
+        try {
+            fetcher.connectToLongPollServer(ts, eventListener);
+        } catch (IOException iex) {
+            eventListener.onFailure(context.getString(R.string.error_connect_server));
+        }
+    }
+    
     public void initLongPoll(final OperationListener<LongPoll> listener) {
         try {
             LongPoll curr = fetcher.getLongPollServer();
@@ -306,5 +305,13 @@ public class VKManager {
         } catch (IOException iex) {
             listener.onFailure(context.getString(R.string.error_connect_server));
         }
+    }
+
+    public User getCurrentUser() {
+        return currentUser;
+    }
+
+    public LongPoll getCurrentLongPoll() {
+        return longPoll;
     }
 }

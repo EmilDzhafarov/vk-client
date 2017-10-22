@@ -80,11 +80,35 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
         messageAdapter = new MessageAdapter(messages, getActivity());
         recyclerView.setAdapter(messageAdapter);
 
-        LinearLayoutManager manager = new LinearLayoutManager(getActivity());
+        final LinearLayoutManager manager = new LinearLayoutManager(getActivity());
         manager.setReverseLayout(true);
         manager.setStackFromEnd(true);
         recyclerView.setLayoutManager(manager);
-
+        recyclerView.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
+            @Override
+            public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft, int oldTop, int oldRight, int oldBottom) {
+                if ( bottom < oldBottom) {
+                    recyclerView.postDelayed(new Runnable() {
+                        @Override
+                        public void run() {
+                            recyclerView.smoothScrollToPosition(0);
+                        }
+                    }, 500);
+                }
+            }
+        });
+        recyclerView.addOnScrollListener(new RecyclerView.OnScrollListener() {
+            @Override
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                super.onScrolled(recyclerView, dx, dy);
+                int visibleItemCount = manager.getChildCount();
+                int totalItemCount = manager.getItemCount();
+                int firstVisibleItemPosition = manager.findFirstVisibleItemPosition();
+                
+                
+            }
+        });
+        
         destUser = (User) getActivity().getIntent().getSerializableExtra(REQUEST_USER_PROFILE);
         Activity activity = getActivity();
 
@@ -106,33 +130,6 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
 
         vkManager = VKManager.getInstance();
         messageLab = MessageLab.getInstance(getActivity());
-
-        vkManager.registerUnsentMessagesListener(new OperationListener<List<Message>>() {
-            @Override
-            public void onSuccess(final List<Message> object) {
-                Activity activity = getActivity();
-
-                if (activity != null) {
-                    activity.runOnUiThread(
-                            new Runnable() {
-                                @Override
-                                public void run() {
-                                    for (Message message : object) {
-                                        int pos = messages.indexOf(message);
-                                        messages.set(pos, message);
-                                        messageAdapter.notifyDataSetChanged();
-                                    }
-                                }
-                            }
-                    );
-                }
-            }
-
-            @Override
-            public void onFailure(String message) {
-
-            }
-        });
         
         loadingMessages(null);
     }
@@ -208,12 +205,39 @@ public class FragmentChat extends Fragment implements View.OnClickListener {
     public void onStart() {
         super.onStart();
         registerReceiver();
+        vkManager.registerUnsentMessagesListener(new OperationListener<List<Message>>() {
+            @Override
+            public void onSuccess(final List<Message> object) {
+                Activity activity = getActivity();
+
+                if (activity != null) {
+                    activity.runOnUiThread(
+                            new Runnable() {
+                                @Override
+                                public void run() {
+                                    for (Message message : object) {
+                                        int pos = messages.indexOf(message);
+                                        messages.set(pos, message);
+                                        messageAdapter.notifyDataSetChanged();
+                                    }
+                                }
+                            }
+                    );
+                }
+            }
+
+            @Override
+            public void onFailure(String message) {
+                // skip this
+            }
+        });
     }
 
     @Override
     public void onStop() {
         super.onStop();
         getActivity().unregisterReceiver(receiver);
+        vkManager.unregisterUnsentMessagesListener();
     }
 
     private void registerReceiver() {

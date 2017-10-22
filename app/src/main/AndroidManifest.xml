@@ -25,8 +25,7 @@
         <service android:name=".services.UpdateService" />
 
         <activity
-            android:name=".activities.ActivityChat"
-            android:windowSoftInputMode="adjustResize" />
+            android:name=".activities.ActivityChat" />
         
         <activity
             android:name=".activities.ActivityUserProfile" />
